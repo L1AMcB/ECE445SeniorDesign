@@ -6,9 +6,10 @@ Taekwondo is a Korean martial art and combat sport involving primarily kicking t
 
 ## Solution: 
 
-To solve the issue of accessibility, cost, and overall quality of training for athletes, we are proposing electronic target paddles. Our prototype will include pressure sensors at different locations of the paddle and LED’s to measure power and speed for kicking during training. We will also facilitate reaction speed/timing drills via sound or blinking of the LEDs. Example paddle here:
+To solve the issue of accessibility, cost, and overall quality of training for athletes, we are proposing electronic target paddles. Our prototype will include pressure sensors at different locations of the paddle to measure power and speed for kicking during training. The paddle must be lightweight and flexible, which necessitates minimal attachments to the paddle itself, encouraging the use of a wrist attachment to handle the majority of the functionality and connections. We will also facilitate reaction speed/timing drills via sound or blinking of the LEDs. Example paddle here:
 
-We would have our main system (pcb) be a separate box that would handle the inputs from the paddles, and connect to a display to show scores and statistics.
+We would have our main system (pcb) be a separate box that would handle the inputs from the paddles through a bluetooth connection. Then using the information received from the strikes of the athlete, our prototype will output the results and statistics to an external monitor or and LCD screen. 
+
 ## Visual Aid: 
 A pictorial representation of your project that puts your solution in context. Include other external systems relevant to your project (e.g. if your solution connects to a phone via Bluetooth, draw a dotted line between your device and the phone). Note that this is not a block diagram and should explain how the solution is used, not a breakdown of inner components.
 
