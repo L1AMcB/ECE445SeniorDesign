@@ -13,6 +13,8 @@ We would have our main system (pcb) be a separate box that would handle the inpu
 ## Visual Aid: 
 A pictorial representation of your project that puts your solution in context. Include other external systems relevant to your project (e.g. if your solution connects to a phone via Bluetooth, draw a dotted line between your device and the phone). Note that this is not a block diagram and should explain how the solution is used, not a breakdown of inner components.
 
+![Alt text](Screenshot%202025-02-13%20131623.png)
+
 
 Sample visual aid for project which remaps GameCube buttons on the fly.
 ## High-level requirements list: 
