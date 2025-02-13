@@ -1,9 +1,14 @@
 # Introduction
 
 ## Problem:
-One to two paragraphs detailing the problem statement. Include any relevant references to justify the existence or importance of the problem.
+
+Taekwondo is a Korean martial art and combat sport involving primarily kicking techniques and punching. When athletes train, they utilize what are called "paddles," equipments that are analogous to mitts in boxing. Athletes repeatedly hit the paddles to train their kicks and various strikes, and it is usually up to the holder to determine whether it was a good kick, or the athletes themselves will decide whether the kick was "satisfactory" or not. Currently there is no good way to accurately quantify performance in Taekwondo training for drills such as speed and power. There exists electronic gear called "Daedo gear" for automatic scoring by tracking the power and the location of the martial artists’ kicks, but that gear is only used in competition and is prohibitively expensive, unrealistic both for everyday trianing and for accomodating every athlete. 
+
 ## Solution: 
-One to two paragraphs describing the solution. Give a high-level idea of what your solution is, then delve into detail as to how it is implemented. You do not have to commit to a particular implementation at this point, but your description should be explicit and concrete.
+
+To solve the issue of accessibility, cost, and overall quality of training for athletes, we are proposing electronic target paddles. Our prototype will include pressure sensors at different locations of the paddle and LED’s to measure power and speed for kicking during training. We will also facilitate reaction speed/timing drills via sound or blinking of the LEDs. Example paddle here:
+
+We would have our main system (pcb) be a separate box that would handle the inputs from the paddles, and connect to a display to show scores and statistics.
 ## Visual Aid: 
 A pictorial representation of your project that puts your solution in context. Include other external systems relevant to your project (e.g. if your solution connects to a phone via Bluetooth, draw a dotted line between your device and the phone). Note that this is not a block diagram and should explain how the solution is used, not a breakdown of inner components.
 
