@@ -28,9 +28,143 @@ We would have our main system (pcb) be a separate box that would handle the inpu
 ## Block Diagram:
 
 
-# Subsystem Overview: 
+# Paddle System
 
-# Subsystem Requirements: 
+## 1. Power Subsystem
+
+### Battery Source
+- **Option**: One or two AA/AAA batteries in series (2–3 V), or a small Li-ion cell.
+
+### Voltage Regulation
+- **Choice**: A 3.3 V LDO or switching regulator capable of supplying enough current for the microcontroller, Bluetooth module, sensors, and LEDs.
+  - **Example**: MCP1700
+
+### Requirements
+- Must supply stable 3.3 V (±5%) across the operating range of the battery/batteries.
+- Must provide sufficient current for MCU, Bluetooth, sensors, and LEDs (e.g., 100–200 mA depending on design).
+- Should support at least 30 minutes of operation per charge/set of batteries under typical use.
+
+---
+
+## 2. Control Subsystem (Paddle)
+
+### Microcontroller
+- **Choice**: ARM Cortex-M0/M4/M7–based MCU
+- **Clock/Memory**: Enough flash/RAM to handle sensor reading, wireless communication, and LED control logic.
+
+### Bluetooth Module
+- **Choice**:
+  - A discrete module (e.g., RN4871 for BLE), **or**
+  - Integrated into the MCU (e.g., nRF52 series)
+- **Responsibilities**:
+  - Continuously poll force sensors (via ADC) and/or accelerometer (via I²C/SPI).
+  - Process sensor data, detect valid strikes, and handle timing logic.
+  - Communicate wirelessly (via Bluetooth) with the main Control Box (send data, receive LED control commands).
+  - Manage LED states (on/off, color changes) in sync with hits or drills.
+
+### Requirements
+- Must reliably detect hits at a sampling rate sufficient to capture fast strikes (e.g., 100 Hz or higher).
+- Must maintain a stable, low-latency Bluetooth connection (e.g., <50 ms packet round-trip).
+- Must operate at low power to maximize battery life; consider sleep modes when idle.
+
+---
+
+## 3. Sensing Subsystem
+
+### Force/Pressure Sensors
+- **Choice**: Resistive force sensors (e.g., Interlink FSR) or piezoelectric sensors.
+- **Mounting**: Must be robustly affixed to the paddle to survive repeated impacts.
+
+### (Optional) Accelerometer
+- **Choice**: MPU6050, ADXL345, or similar.
+- **Purpose**: Differentiate between partial hits and real hits, or detect motion for advanced metrics.
+
+### Requirements
+- Must accurately measure forces in the relevant range (e.g., up to a few hundred newtons, or scaled by mechanical dampening).
+- Must survive repeated strikes without sensor damage.
+- Data must be stable enough for the MCU to distinguish real hits from noise/vibration.
+
+---
+
+## 4. LED Subsystem
+
+### LED Strip
+- **Choice**: Addressable LEDs (e.g., WS2812B) requiring only one MCU data line, but a 5 V rail.
+- **Power & Drive**:
+  - If using multiple bright LEDs, a small MOSFET or transistor driver may be needed to handle current from the 3.3 V line.
+  - Addressable strips can draw up to 60 mA per RGB LED at full white brightness.
+
+### Requirements
+- Must provide visual feedback within ~100 ms of a detected hit.
+- Current draw should be manageable to avoid excessive battery drain.
+- Must be visible under typical training lighting conditions.
+
+---
+
+# Control Box & Display System
+
+## 1. Power Subsystem (Control Box)
+
+### Wall Power Supply
+- **Choice**: A standard 5 V or 12 V DC adapter (UL-listed, 1–2 A capacity).
+
+### Regulators
+- Regulate down to 5 V (if needed) and 3.3 V for the main MCU, Bluetooth module, amplifier, etc.
+
+### Requirements
+- Must supply enough current for the entire control board, any attached display driver, and audio amplifier.
+- Provide stable 5 V and/or 3.3 V rails.
+
+---
+
+## 2. Control Subsystem (Control Box)
+
+### Microcontroller
+- **Choice**: A higher-performance ARM Cortex-M4/M7 that can handle:
+  - Real-time data processing from the paddle.
+  - Generating or buffering a video signal or controlling an external HDMI driver.
+  - Audio signal generation.
+- **Example**: PIC32CZ or STM32H7
+
+### External Memory / Storage (Optional)
+- Potentially for bigger buffers or storing logs/scores, include an external SPI Flash or SD card slot.
+
+### Bluetooth Transceiver
+- Could be the same type of module as in the paddle, or a complementary BLE module integrated on the board.
+- If the MCU includes BLE, use that.
+
+### (Optional) External Video Driver
+- For generating HDMI signal, we might use:
+  - An FPGA-based or dedicated HDMI encoder chip (e.g., TFP410/TFP401 for DVI/HDMI).
+
+### Requirements
+- Must receive sensor data at an acceptable rate (e.g., at least 10–50 packets/sec) and update the user display quickly (<200 ms latency).
+- Must handle calculations (strike force, average speed, reaction times) in real time.
+- Provide a robust wireless link—lost packets should be detected, and the system should handle re-connections smoothly.
+
+---
+
+## 3. User Interface Subsystem
+
+### Display
+- Include an HDMI encoder chip and route the necessary signals from the MCU to generate timing.
+- **External Display**: Any external display with an HDMI input.
+
+### (Optional) Speaker / Audio
+- **Audio Amplifier**: e.g., a small Class D amp (PAM8403 or similar).
+- **Connection**:
+  - MCU generates audio signals via PWM or I²S → Amp → Speaker.
+- **Audio Cues**: Reaction drills, notifications, etc.
+
+### (Optional) Input Buttons or Controls
+- Let you start/stop drills, reset counters, etc.
+- Connect to MCU GPIO with basic debouncing.
+
+### Requirements
+- Display must show real-time stats (hit count, force, reaction time) within 200 ms.
+- If using a speaker, volume must be sufficient for a noisy training environment.
+- If using physical buttons, they must be straightforward for an athlete or coach to press mid-training.
+
 
 ## Tolerance Analysis:
 
