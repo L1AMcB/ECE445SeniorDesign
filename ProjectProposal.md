@@ -210,5 +210,5 @@ The biggest hurdle we must overcome is the robustness of the paddle system. Repe
 
 # Ethics and Safety
 
-We see no ethics concern with this type of technology. However in terms of safety, no one should attempt the Taekwondo techniques if they are not already experienced, or are being guided by someone who is. 
+We see no ethics concern with this type of technology. We will follow all policies outlined by the IEEE and the ACM Code of Ethics. To avoid ethical breaches we will consistently check that our work always follows best practice. In terms of safety, no one should attempt the Taekwondo techniques if they are not already experienced, or are being guided by someone who is. Both Liam and Alex have 10+ years of experience with Taekwondo and are thus well suited to handle this project safely. 
 
