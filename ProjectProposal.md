@@ -167,6 +167,7 @@ We would have our main system (pcb) be a separate box that would handle the inpu
 
 
 ## Tolerance Analysis:
+The biggest hurdle we must overcome is the robustness of the paddle system. Repeated strikes from trained martial artists will require a system able to handle it accordingly. Part of how we aim to solve this is having some of the more fragile components on the wrist of the holder, rather than in the paddle itself. The force sensors themselves are designed for taking blows. If we go with the Force Sensing Resistors like planned, they are flexible enough that we won't need to worry about them breaking. We also plan to pad the sensors to both dampen the strikes as well as help protect the sensors. 
 
 # Ethics and Safety
 
