@@ -30,6 +30,45 @@ We would have our main system (pcb) be a separate box that would handle the inpu
 
 # Paddle System
 
+## 1. Power Subsystem (Paddle)
+This subsystem provides a stable voltage to the paddle’s electronics using either small batteries (AA/AAA) or a Li-ion cell and a regulator. It ensures that the microcontroller, Bluetooth module, sensors, and LEDs receive a constant 3.3 V supply. Sufficient battery capacity must support at least 30 minutes of continuous operation for a typical training session.
+
+---
+
+## 2. Control Subsystem (Paddle)
+A microcontroller and Bluetooth module gather sensor data and wirelessly transmit it to the main control box. This subsystem also processes immediate tasks—such as recognizing valid hits and managing LED signals on the paddle. 
+
+---
+
+## 3. Sensing Subsystem
+Force sensors (and an optional accelerometer) measure the intensity (optionally location if we do an array of sensors in the paddle) of each kick on the paddle. They must be robust enough to survive repeated strikes while still delivering accurate, noise-free data to the microcontroller. Appropriate padding or mechanical dampening helps protect the sensors and ensures consistent measurements.
+
+---
+
+## 4. LED Subsystem
+LEDs on the paddle provide immediate visual feedback to the athlete, indicating a valid strike or readiness for the next drill. These lights will be addressable RGB strips driven by a single data line from the microcontroller. Efficient control of brightness and timing is crucial to prevent excessive battery drain.
+
+---
+
+# Control Box & Display System
+
+## 1. Power Subsystem (Control Box)
+A wall power supply feeds the main PCB, which regulates voltage for the microcontroller, Bluetooth receiver, and any additional components (such as an audio amplifier). This ensures a stable operating environment and adequate current for the entire system. Safety-certified adapters (e.g., UL-listed) protect users from electrical hazards.
+
+---
+
+## 2. Control Subsystem (Control Box)
+A more capable microcontroller on a custom PCB handles incoming Bluetooth data from the paddle, calculates force and timing metrics, and coordinates outputs like audio cues or display updates. It manages pairing, data integrity, and any higher-level logic (e.g., storing scores or compiling statistics). Real-time processing is essential to minimize latency and keep up with fast-paced training drills.
+
+---
+
+## 3. User Interface Subsystem
+Connected via HDMI or a dedicated display driver, this subsystem visually presents performance metrics and scoring to the athlete or coach. An optional speaker or audio amplifier produces audible cues for reaction drills and hit confirmations. Physical buttons or other input mechanisms allow users to start/stop sessions, reset counters, or navigate settings quickly and intuitively.
+
+
+
+# Paddle System
+
 ## 1. Power Subsystem
 
 ### Battery Source
