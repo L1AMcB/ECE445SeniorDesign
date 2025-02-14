@@ -15,11 +15,26 @@ We would have our main system (pcb) be a separate box that would handle the inpu
 ![Alt text](Screenshot%202025-02-13%20131623.png)
 
 ## High-level requirements list: 
+
+1. System must be able to accurately differentiate between different strength strikes to the paddle. 
+
+2. Added weight to the paddle must not exceed 2 punds so that the kicker can safely strike the paddle, and so the holder doesn't have to work noticably harder than before to use the paddle.
+
+3. Paddle must be able to last on it's own power for more than thirty minutes.
+
+
+
 # Design
 ## Block Diagram:
 
 
 # Subsystem Overview: 
+
 # Subsystem Requirements: 
+
 ## Tolerance Analysis:
+
 # Ethics and Safety
+
+We see no ethics concern with this type of technology. However in terms of safety, no one should attempt the Taekwondo techniques if they are not already experienced, or are being guided by someone who is. 
+
