@@ -26,7 +26,7 @@ We would have our main system (pcb) be a separate box that would handle the inpu
 
 # Design
 ## Block Diagram:
-
+![Alt text](Screenshot%202025-02-13%20221227.png)
 
 # Paddle System
 
