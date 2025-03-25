@@ -20,7 +20,7 @@ The FlexiForce sensor documentation. Here are the recommended circuit diagrams a
 
 ![FlexiForce Recommended Circuit](../../Screenshot%202025-03-04%20at%204.13.30%20PM.png)
 
-![FlexiForce Sensor Dimensions](../../Screenshot%202025-03-04%20at%204.13.51%20PM.png)
+![FlexiForce Sensor Dimensions](../../Screenshot_2025-03-04_at_4.13.51%20PM.png)
 
 The recommended circuit uses an MCP 6001 op-amp with a reference resistance between 1kΩ to 100kΩ. The sensor resistance at no load is >5MΩ, and the maximum recommended current is 2.5mA. This will be important for our circuit design when integrating the sensor with our ESP32.
 
