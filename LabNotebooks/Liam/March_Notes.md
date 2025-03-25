@@ -24,3 +24,36 @@ The FlexiForce sensor documentation. Here are the recommended circuit diagrams a
 
 The recommended circuit uses an MCP 6001 op-amp with a reference resistance between 1kΩ to 100kΩ. The sensor resistance at no load is >5MΩ, and the maximum recommended current is 2.5mA. This will be important for our circuit design when integrating the sensor with our ESP32.
 
+
+Final breadboard demo board:
+
+![Breadboard demo](../../Screenshot_2025-03-25_at_3.48.51_PM.png)
+
+3/10
+
+We have decided to do a significant redesign to our project. We are removing the control box functionality and are instead using just a laptop in place.
+
+We are doing this because it will be significantly easier for the user, and we are then able to handle a more complex program and display, as well as multiple paddles being used in conjunction
+
+We have finalized our PCB schematic and design, and have routed all of our connections. We have added a few test points and gone through both PCBways audit, as well as the design rule checker in KiCad
+
+![PCB Design](../../Screenshot_2025-03-25_at_3.48.00_PM.png)
+
+There were some issues initially, some with hole sized being too small, an issue with the esp32 footprint not matching, and then an issue with our potentiometer design that Alex found.
+
+In our design we give room for two flexiforce resistors, they are to be connected via wires to the board rather than connected directly. This allows us much more flexibility in the placement of our sensors. 
+
+![PCB unwired](../../Screenshot_2025-03-13_at_4.35.22_PM.png)
+
+![PCB wired](../../Screenshot_2025-03-25_at_3.48.25_PM.png)
+
+
+3/17
+
+We have passed all audits and ordered from PCBway. It should be arriving Wednesday or Thursday. 
+
+
+
+
+
+3/24
