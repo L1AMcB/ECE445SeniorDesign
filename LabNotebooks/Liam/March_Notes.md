@@ -52,8 +52,24 @@ In our design we give room for two flexiforce resistors, they are to be connecte
 
 We have passed all audits and ordered from PCBway. It should be arriving Wednesday or Thursday. 
 
+Our actual PCB
 
+![PCB board](../../Screenshot_2025-04-01_at_3.52.19_PM.png)
 
 
 
 3/24
+
+We started working on our program to connect multiple esp32's to a laptop. 
+
+We have also ordered the parts necessary for us to start testing our board and we will be able to do that next week. 
+
+We have Started our final design for the paddle to give to the machine shop. 
+
+
+3/31
+
+We will be soldering the esp32 onto our boards this week and connecting the flexiforce resistors so that we can test the pcbs. Then we will also be able to connect them to our program.
+
+If we are able to test the pcb properly then we will solder the rest of the components.
+
