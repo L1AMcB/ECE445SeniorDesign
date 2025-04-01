@@ -45,5 +45,3 @@ The ESP32 should be programmed to:
 1. Set up as a Bluetooth server
 2. Read force sensor values
 3. Respond to "GET_FORCE" commands by sending the current force value
-
-A sample Arduino sketch for the ESP32 will be provided separately. 
