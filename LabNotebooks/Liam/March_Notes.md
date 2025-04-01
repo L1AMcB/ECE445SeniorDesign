@@ -62,6 +62,11 @@ Our actual PCB
 
 We started working on our program to connect multiple esp32's to a laptop. 
 
+Preliminary version with simulated signals:
+
+![Beta Program](../../Screenshot_2025-04-01_at_4.29.47_PM.png)
+
+
 We have also ordered the parts necessary for us to start testing our board and we will be able to do that next week. 
 
 We have Started our final design for the paddle to give to the machine shop. 
