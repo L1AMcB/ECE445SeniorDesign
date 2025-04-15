@@ -1,0 +1,13 @@
+Plan for the demo:
+
+Show the program and the paddle and explain how everthing works
+
+demonstrate the funcitonality by:
+
+ - simple kicks and punches to show the force measurement
+
+ - kicks at roughly the same force level to show consistency in the measurements
+
+ - show inaccurate kicks are measured properly as well, by kicking the paddle poorly and showing the accuracy
+
+ - show the mini games and traning modes to show the funcitonality of the paddle and the program
