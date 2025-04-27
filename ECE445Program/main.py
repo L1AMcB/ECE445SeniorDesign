@@ -39,9 +39,23 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Start on splash, then auto-switch to main menu
         self.stack.setCurrentWidget(self.splash_screen)
-        QtCore.QTimer.singleShot(1500,
-                                 lambda: self.stack.setCurrentWidget(self.main_menu_screen))
-
+        
+        # Animation setup for splash screen
+        self.splash_logo = self.splash_screen.logo_label
+        opacity_effect = QtWidgets.QGraphicsOpacityEffect()
+        opacity_effect.setOpacity(0)
+        self.splash_logo.setGraphicsEffect(opacity_effect)
+        
+        # Fade in animation
+        self.fade_in = QtCore.QPropertyAnimation(self.splash_logo.graphicsEffect(), b"opacity")
+        self.fade_in.setDuration(1000)  # 1 second
+        self.fade_in.setStartValue(0)
+        self.fade_in.setEndValue(1)
+        self.fade_in.start()
+        
+        # Wait for fade-in, then start fade-out
+        QtCore.QTimer.singleShot(2500, self._start_fade_out)
+        
         # Timer to refresh force readings every 100ms
         self.update_timer = QtCore.QTimer(self)
         self.update_timer.setInterval(100)
@@ -50,22 +64,23 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _create_splash_screen(self):
         w = QtWidgets.QWidget()
+        w.setStyleSheet("background-color: black;")
         layout = QtWidgets.QVBoxLayout(w)
         layout.setAlignment(QtCore.Qt.AlignCenter)
         # Logo
         logo_lbl = QtWidgets.QLabel()
         logo_path = os.path.join("assets", "ctc_logo.png")
         if os.path.isfile(logo_path):
-            pix = QtGui.QPixmap(logo_path).scaled(300,300,
+            pix = QtGui.QPixmap(logo_path).scaled(600,600,
                                                  QtCore.Qt.KeepAspectRatio,
                                                  QtCore.Qt.SmoothTransformation)
             logo_lbl.setPixmap(pix)
         layout.addWidget(logo_lbl)
-        # Text
-        text_lbl = QtWidgets.QLabel("Produced by CTC")
-        text_lbl.setAlignment(QtCore.Qt.AlignCenter)
-        text_lbl.setFont(QtGui.QFont("Helvetica", 24, QtGui.QFont.Bold))
-        layout.addWidget(text_lbl)
+        # Remove text label - we just want the logo
+        
+        # Store reference to the logo label
+        w.logo_label = logo_lbl
+        
         return w
 
     def _create_main_menu(self):
@@ -329,6 +344,14 @@ class MainWindow(QtWidgets.QMainWindow):
                     sensor_idx = widget['sensor_idx']
                     widget['force'].setText(f"Force {sensor_idx+1}: Error")
 
+    def _start_fade_out(self):
+        # Fade out animation
+        self.fade_out = QtCore.QPropertyAnimation(self.splash_logo.graphicsEffect(), b"opacity")
+        self.fade_out.setDuration(1000)  # 1 second
+        self.fade_out.setStartValue(1)
+        self.fade_out.setEndValue(0)
+        self.fade_out.finished.connect(lambda: self.stack.setCurrentWidget(self.main_menu_screen))
+        self.fade_out.start()
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
