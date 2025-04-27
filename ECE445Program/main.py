@@ -121,33 +121,61 @@ class MainWindow(QtWidgets.QMainWindow):
         hlayout.addStretch()
         hlayout.addWidget(back_btn)
         vlayout.addLayout(hlayout)
+        
+        # Storage for force-screen widgets (clearing any previous entries)
+        self.force_widgets = []
+        
         # Create group boxes for each ESP32
-        for label, handler in [("ESP32 #1", self.bt1), ("ESP32 #2", self.bt2)]:
+        for esp_idx, (label, handler) in enumerate([("ESP32 #1", self.bt1), ("ESP32 #2", self.bt2)]):
             gb = QtWidgets.QGroupBox(label)
             gb.setFont(QtGui.QFont("Helvetica", 14, QtGui.QFont.Bold))
             glayout = QtWidgets.QVBoxLayout(gb)
+            
+            # Status label and connect button
             status_lbl = QtWidgets.QLabel("Status: Disconnected")
             status_lbl.setStyleSheet("color:red;")
-            force_lbl  = QtWidgets.QLabel("Force: N/A")
-            force_lbl.setFont(QtGui.QFont("Helvetica", 16, QtGui.QFont.Bold))
-            bar = QtWidgets.QProgressBar()
-            bar.setRange(0, 1500)
             btn = QtWidgets.QPushButton("Connect")
-            btn.clicked.connect(lambda _: self._toggle_connection(handler,
-                                  status_lbl, bar, force_lbl, btn))
-            glayout.addWidget(status_lbl)
-            glayout.addWidget(force_lbl)
-            glayout.addWidget(bar)
-            glayout.addWidget(btn)
+            hlayout = QtWidgets.QHBoxLayout()
+            hlayout.addWidget(status_lbl)
+            hlayout.addStretch()
+            hlayout.addWidget(btn)
+            glayout.addLayout(hlayout)
+            
+            esp_widgets = []  # Store widgets for this ESP32
+            
+            # Create two force displays for each ESP32
+            for sensor_idx in range(2):
+                sensor_gb = QtWidgets.QGroupBox(f"Force Sensor #{sensor_idx+1}")
+                sensor_layout = QtWidgets.QVBoxLayout(sensor_gb)
+                
+                force_lbl = QtWidgets.QLabel(f"Force {sensor_idx+1}: N/A")
+                force_lbl.setFont(QtGui.QFont("Helvetica", 16, QtGui.QFont.Bold))
+                bar = QtWidgets.QProgressBar()
+                bar.setRange(0, 1500)
+                
+                sensor_layout.addWidget(force_lbl)
+                sensor_layout.addWidget(bar)
+                glayout.addWidget(sensor_gb)
+                
+                # Store references for this ESP32 and sensor
+                widget_data = {
+                    'handler': handler,
+                    'esp_idx': esp_idx,
+                    'sensor_idx': sensor_idx,
+                    'status': status_lbl,
+                    'force': force_lbl,
+                    'bar': bar,
+                    'btn': btn
+                }
+                self.force_widgets.append(widget_data)
+                esp_widgets.append(widget_data)
+            
+            # Connect button event handling with properly captured parameters
+            btn.clicked.connect(lambda checked, h=handler, s=status_lbl, w=esp_widgets, b=btn: 
+                                self._toggle_connection(h, s, w, b))
+            
             vlayout.addWidget(gb)
-            # store references for updates
-            self.force_widgets.append({
-                'handler': handler,
-                'status': status_lbl,
-                'force': force_lbl,
-                'bar': bar,
-                'btn': btn
-            })
+            
         return w
 
     def _create_training_screen(self):
@@ -225,50 +253,81 @@ class MainWindow(QtWidgets.QMainWindow):
     def _show_settings(self):    self.stack.setCurrentWidget(self.settings_screen)
 
     # Connect/disconnect logic
-    def _toggle_connection(self, handler, status_lbl, bar, force_lbl, btn):
+    def _toggle_connection(self, handler, status_lbl, widgets, btn):
         if not handler.is_connected:
             if handler.connect():
                 status_lbl.setText("Status: Connected")
                 status_lbl.setStyleSheet("color:green;")
                 btn.setText("Disconnect")
+                for widget in widgets:
+                    widget['force'].setText(f"Force {widget['sensor_idx']+1}: N/A")
+                    widget['bar'].setValue(0)
             else:
                 status_lbl.setText("Status: Connection Failed")
         else:
             handler.disconnect()
             status_lbl.setText("Status: Disconnected")
             status_lbl.setStyleSheet("color:red;")
-            force_lbl.setText("Force: N/A")
             btn.setText("Connect")
-            bar.setValue(0)
+            for widget in widgets:
+                widget['force'].setText(f"Force {widget['sensor_idx']+1}: N/A")
+                widget['bar'].setValue(0)
 
     # Periodic update for force readings
     def _update_readings(self):
-        # First device: two sensors
-        if self.bt1.is_connected:
+        # Group widgets by ESP32
+        widgets_by_esp = {}
+        for widget in self.force_widgets:
+            esp_idx = widget['esp_idx']
+            if esp_idx not in widgets_by_esp:
+                widgets_by_esp[esp_idx] = []
+            widgets_by_esp[esp_idx].append(widget)
+        
+        # Update ESP32 #1
+        if self.bt1.is_connected and 0 in widgets_by_esp:
             try:
-                f1, f2 = self.bt1.get_both_force_readings()
-                for idx, f in enumerate((f1, f2)):
-                    widget = self.force_widgets[idx]
-                    if isinstance(f, (int, float)):
-                        widget['force'].setText(f"Force: {f} N")
-                        widget['bar'].setValue(min(1500, max(0, int(f))))
+                # Get both force readings from ESP32 #1
+                force1, force2 = self.bt1.get_both_force_readings()
+                forces = [force1, force2]
+                
+                # Update widgets for ESP32 #1
+                for widget in widgets_by_esp[0]:
+                    sensor_idx = widget['sensor_idx']
+                    force = forces[sensor_idx]
+                    
+                    if isinstance(force, (int, float)):
+                        widget['force'].setText(f"Force {sensor_idx+1}: {force} N")
+                        widget['bar'].setValue(min(1500, max(0, int(force))))
                     else:
-                        widget['force'].setText(str(f))
+                        widget['force'].setText(f"Force {sensor_idx+1}: {force}")
             except Exception as e:
                 print(f"Error reading from ESP32_1: {e}")
-                self.force_widgets[0]['force'].setText("Force: Error")
-        # Second device (if separate)
-        if self.bt2.is_connected:
+                for widget in widgets_by_esp[0]:
+                    sensor_idx = widget['sensor_idx']
+                    widget['force'].setText(f"Force {sensor_idx+1}: Error")
+        
+        # Update ESP32 #2
+        if self.bt2.is_connected and 1 in widgets_by_esp:
             try:
-                f = self.bt2.get_force_reading()
-                widget = self.force_widgets[1]
-                if isinstance(f, (int, float)):
-                    widget['force'].setText(f"Force: {f} N")
-                    widget['bar'].setValue(min(1500, max(0, int(f))))
-                else:
-                    widget['force'].setText(str(f))
+                # Get both force readings from ESP32 #2
+                force1, force2 = self.bt2.get_both_force_readings()
+                forces = [force1, force2]
+                
+                # Update widgets for ESP32 #2
+                for widget in widgets_by_esp[1]:
+                    sensor_idx = widget['sensor_idx']
+                    force = forces[sensor_idx]
+                    
+                    if isinstance(force, (int, float)):
+                        widget['force'].setText(f"Force {sensor_idx+1}: {force} N")
+                        widget['bar'].setValue(min(1500, max(0, int(force))))
+                    else:
+                        widget['force'].setText(f"Force {sensor_idx+1}: {force}")
             except Exception as e:
                 print(f"Error reading from ESP32_2: {e}")
+                for widget in widgets_by_esp[1]:
+                    sensor_idx = widget['sensor_idx']
+                    widget['force'].setText(f"Force {sensor_idx+1}: Error")
 
 
 if __name__ == "__main__":
