@@ -269,7 +269,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     widget['force'].setText(str(f))
             except Exception as e:
                 print(f"Error reading from ESP32_2: {e}")
-                self.force_widgets[1]['force'].setText("Force: Error")
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
