@@ -289,19 +289,35 @@ class CTCForceApp:
                                     font=("Helvetica", 12))
         self.status_label1.pack(anchor="w")
         
-        self.force_label1 = tk.Label(self.frame1, text="Force: N/A", 
+        # Force 1 label for ESP32 #1
+        self.force_label1_1 = tk.Label(self.frame1, text="Force 1: N/A", 
                                    font=("Helvetica", 16, "bold"),
                                    bg="#ffffff")
-        self.force_label1.pack(anchor="w", pady=(5, 15))
+        self.force_label1_1.pack(anchor="w", pady=(5, 5))
         
-        # Force bar for ESP32 #1
-        self.force_bar_frame1 = tk.Frame(self.frame1, height=40, bg="#ffffff")
-        self.force_bar_frame1.pack(fill="x", expand=True)
+        # Force 1 bar for ESP32 #1
+        self.force_bar_frame1_1 = tk.Frame(self.frame1, height=30, bg="#ffffff")
+        self.force_bar_frame1_1.pack(fill="x", expand=True)
         
-        self.force_bar_bg1 = tk.Canvas(self.force_bar_frame1, height=40, bg="#ecf0f1")
-        self.force_bar_bg1.pack(fill="both")
+        self.force_bar_bg1_1 = tk.Canvas(self.force_bar_frame1_1, height=30, bg="#ecf0f1")
+        self.force_bar_bg1_1.pack(fill="both")
         
-        self.force_bar1 = self.force_bar_bg1.create_rectangle(0, 0, 0, 40, fill="#3498db", outline="")
+        self.force_bar1_1 = self.force_bar_bg1_1.create_rectangle(0, 0, 0, 30, fill="#3498db", outline="")
+        
+        # Force 2 label for ESP32 #1
+        self.force_label1_2 = tk.Label(self.frame1, text="Force 2: N/A", 
+                                   font=("Helvetica", 16, "bold"),
+                                   bg="#ffffff")
+        self.force_label1_2.pack(anchor="w", pady=(10, 5))
+        
+        # Force 2 bar for ESP32 #1
+        self.force_bar_frame1_2 = tk.Frame(self.frame1, height=30, bg="#ffffff")
+        self.force_bar_frame1_2.pack(fill="x", expand=True)
+        
+        self.force_bar_bg1_2 = tk.Canvas(self.force_bar_frame1_2, height=30, bg="#ecf0f1")
+        self.force_bar_bg1_2.pack(fill="both")
+        
+        self.force_bar1_2 = self.force_bar_bg1_2.create_rectangle(0, 0, 0, 30, fill="#27ae60", outline="")
         
         # Status and readings for ESP32 #2
         self.status_label2 = tk.Label(self.frame2, text="Status: Disconnected", 
@@ -309,34 +325,49 @@ class CTCForceApp:
                                     font=("Helvetica", 12))
         self.status_label2.pack(anchor="w")
         
-        self.force_label2 = tk.Label(self.frame2, text="Force: N/A", 
+        # Force 1 label for ESP32 #2
+        self.force_label2_1 = tk.Label(self.frame2, text="Force 1: N/A", 
                                    font=("Helvetica", 16, "bold"),
                                    bg="#ffffff")
-        self.force_label2.pack(anchor="w", pady=(5, 15))
+        self.force_label2_1.pack(anchor="w", pady=(5, 5))
         
-        # Force bar for ESP32 #2
-        self.force_bar_frame2 = tk.Frame(self.frame2, height=40, bg="#ffffff")
-        self.force_bar_frame2.pack(fill="x", expand=True)
+        # Force 1 bar for ESP32 #2
+        self.force_bar_frame2_1 = tk.Frame(self.frame2, height=30, bg="#ffffff")
+        self.force_bar_frame2_1.pack(fill="x", expand=True)
         
-        self.force_bar_bg2 = tk.Canvas(self.force_bar_frame2, height=40, bg="#ecf0f1")
-        self.force_bar_bg2.pack(fill="both")
+        self.force_bar_bg2_1 = tk.Canvas(self.force_bar_frame2_1, height=30, bg="#ecf0f1")
+        self.force_bar_bg2_1.pack(fill="both")
         
-        self.force_bar2 = self.force_bar_bg2.create_rectangle(0, 0, 0, 40, fill="#e74c3c", outline="")
+        self.force_bar2_1 = self.force_bar_bg2_1.create_rectangle(0, 0, 0, 30, fill="#e74c3c", outline="")
         
-        # Force labels
+        # Force 2 label for ESP32 #2
+        self.force_label2_2 = tk.Label(self.frame2, text="Force 2: N/A", 
+                                   font=("Helvetica", 16, "bold"),
+                                   bg="#ffffff")
+        self.force_label2_2.pack(anchor="w", pady=(10, 5))
+        
+        # Force 2 bar for ESP32 #2
+        self.force_bar_frame2_2 = tk.Frame(self.frame2, height=30, bg="#ffffff")
+        self.force_bar_frame2_2.pack(fill="x", expand=True)
+        
+        self.force_bar_bg2_2 = tk.Canvas(self.force_bar_frame2_2, height=30, bg="#ecf0f1")
+        self.force_bar_bg2_2.pack(fill="both")
+        
+        self.force_bar2_2 = self.force_bar_bg2_2.create_rectangle(0, 0, 0, 30, fill="#9b59b6", outline="")
+        
         # Force labels
         force_scale_frame1 = tk.Frame(self.frame1, bg="#ffffff")
         force_scale_frame1.pack(fill="x")
         tk.Label(force_scale_frame1, text="0 N", 
             font=("Helvetica", 10), bg="#ffffff").pack(side="left")
-        tk.Label(force_scale_frame1, text="1500 N",  # Changed from 1000 N to 1500 N
+        tk.Label(force_scale_frame1, text="1500 N",
             font=("Helvetica", 10), bg="#ffffff").pack(side="right")
 
         force_scale_frame2 = tk.Frame(self.frame2, bg="#ffffff")
         force_scale_frame2.pack(fill="x")
         tk.Label(force_scale_frame2, text="0 N", 
             font=("Helvetica", 10), bg="#ffffff").pack(side="left")
-        tk.Label(force_scale_frame2, text="1500 N",  # Changed from 1000 N to 1500 N
+        tk.Label(force_scale_frame2, text="1500 N",
             font=("Helvetica", 10), bg="#ffffff").pack(side="right")
         
         # Connect buttons with modern styling
@@ -573,9 +604,11 @@ class CTCForceApp:
             else:
                 self.bt_handler1.disconnect()
                 self.status_label1.config(text="Status: Disconnected", fg="red")
-                self.force_label1.config(text="Force: N/A")
+                self.force_label1_1.config(text="Force 1: N/A")
+                self.force_label1_2.config(text="Force 2: N/A")
                 self.connect_button1.config(text="Connect")
-                self.force_bar_bg1.coords(self.force_bar1, 0, 0, 0, 40)
+                self.force_bar_bg1_1.coords(self.force_bar1_1, 0, 0, 0, 30)
+                self.force_bar_bg1_2.coords(self.force_bar1_2, 0, 0, 0, 30)
         else:
             if not self.bt_handler2.is_connected:
                 success = self.bt_handler2.connect()
@@ -587,54 +620,73 @@ class CTCForceApp:
             else:
                 self.bt_handler2.disconnect()
                 self.status_label2.config(text="Status: Disconnected", fg="red")
-                self.force_label2.config(text="Force: N/A")
+                self.force_label2_1.config(text="Force 1: N/A")
+                self.force_label2_2.config(text="Force 2: N/A")
                 self.connect_button2.config(text="Connect")
-                self.force_bar_bg2.coords(self.force_bar2, 0, 0, 0, 40)
+                self.force_bar_bg2_1.coords(self.force_bar2_1, 0, 0, 0, 30)
+                self.force_bar_bg2_2.coords(self.force_bar2_2, 0, 0, 0, 30)
     
     def update_readings(self):
         while self.running:
             # Only update if we're in the force measurement screen
-            if hasattr(self, 'force_label1') and self.force_label1.winfo_exists():
-                # Update ESP32 #1 readings - now get both values at once
+            if hasattr(self, 'force_label1_1') and self.force_label1_1.winfo_exists():
+                # Update ESP32 #1 readings
                 if self.bt_handler1.is_connected:
                     try:
-                        force1, force2 = self.bt_handler1.get_both_force_readings()
+                        # Get both readings from ESP32 #1
+                        force1_1, force1_2 = self.bt_handler1.get_both_force_readings()
                         
                         # Update first force reading display
-                        if isinstance(force1, (int, float)):
-                            self.force_label1.config(text=f"Force: {force1} N")
+                        if isinstance(force1_1, (int, float)):
+                            self.force_label1_1.config(text=f"Force 1: {force1_1} N")
                             # Update force bar - scale from 0-1500 to 0-width of bar
-                            bar_width = min(self.force_bar_bg1.winfo_width(), max(0, force1/1500 * self.force_bar_bg1.winfo_width()))
-                            self.force_bar_bg1.coords(self.force_bar1, 0, 0, bar_width, 40)
+                            bar_width = min(self.force_bar_bg1_1.winfo_width(), max(0, force1_1/1500 * self.force_bar_bg1_1.winfo_width()))
+                            self.force_bar_bg1_1.coords(self.force_bar1_1, 0, 0, bar_width, 30)
                         else:
-                            self.force_label1.config(text=f"Force: {force1}")
+                            self.force_label1_1.config(text=f"Force 1: {force1_1}")
                         
-                        # Update second force reading if we're using a single ESP32 for both sensors
-                        if isinstance(force2, (int, float)):
-                            self.force_label2.config(text=f"Force: {force2} N")
+                        # Update second force reading display
+                        if isinstance(force1_2, (int, float)):
+                            self.force_label1_2.config(text=f"Force 2: {force1_2} N")
                             # Update force bar - scale from 0-1500 to 0-width of bar
-                            bar_width = min(self.force_bar_bg2.winfo_width(), max(0, force2/1500 * self.force_bar_bg2.winfo_width()))
-                            self.force_bar_bg2.coords(self.force_bar2, 0, 0, bar_width, 40)
+                            bar_width = min(self.force_bar_bg1_2.winfo_width(), max(0, force1_2/1500 * self.force_bar_bg1_2.winfo_width()))
+                            self.force_bar_bg1_2.coords(self.force_bar1_2, 0, 0, bar_width, 30)
+                        else:
+                            self.force_label1_2.config(text=f"Force 2: {force1_2}")
                         
                     except Exception as e:
                         print(f"Error reading from ESP32_1: {e}")
-                        self.force_label1.config(text="Force: Error reading")
+                        self.force_label1_1.config(text="Force 1: Error reading")
+                        self.force_label1_2.config(text="Force 2: Error reading")
                 
-                # If you're using a separate ESP32 for the second sensor, keep this code
-                # Otherwise, you can remove it if both sensors are connected to ESP32_1
+                # Update ESP32 #2 readings
                 if self.bt_handler2.is_connected:
                     try:
-                        force2 = self.bt_handler2.get_force_reading()
-                        if isinstance(force2, (int, float)):
-                            self.force_label2.config(text=f"Force: {force2} N")
+                        # Get both readings from ESP32 #2
+                        force2_1, force2_2 = self.bt_handler2.get_both_force_readings()
+                        
+                        # Update first force reading display
+                        if isinstance(force2_1, (int, float)):
+                            self.force_label2_1.config(text=f"Force 1: {force2_1} N")
                             # Update force bar - scale from 0-1500 to 0-width of bar
-                            bar_width = min(self.force_bar_bg2.winfo_width(), max(0, force2/1500 * self.force_bar_bg2.winfo_width()))
-                            self.force_bar_bg2.coords(self.force_bar2, 0, 0, bar_width, 40)
+                            bar_width = min(self.force_bar_bg2_1.winfo_width(), max(0, force2_1/1500 * self.force_bar_bg2_1.winfo_width()))
+                            self.force_bar_bg2_1.coords(self.force_bar2_1, 0, 0, bar_width, 30)
                         else:
-                            self.force_label2.config(text=f"Force: {force2}")
+                            self.force_label2_1.config(text=f"Force 1: {force2_1}")
+                        
+                        # Update second force reading display
+                        if isinstance(force2_2, (int, float)):
+                            self.force_label2_2.config(text=f"Force 2: {force2_2} N")
+                            # Update force bar - scale from 0-1500 to 0-width of bar
+                            bar_width = min(self.force_bar_bg2_2.winfo_width(), max(0, force2_2/1500 * self.force_bar_bg2_2.winfo_width()))
+                            self.force_bar_bg2_2.coords(self.force_bar2_2, 0, 0, bar_width, 30)
+                        else:
+                            self.force_label2_2.config(text=f"Force 2: {force2_2}")
+                        
                     except Exception as e:
                         print(f"Error reading from ESP32_2: {e}")
-                        self.force_label2.config(text="Force: Error reading")
+                        self.force_label2_1.config(text="Force 1: Error reading")
+                        self.force_label2_2.config(text="Force 2: Error reading")
                 
                 time.sleep(0.1)  # Update frequently
     

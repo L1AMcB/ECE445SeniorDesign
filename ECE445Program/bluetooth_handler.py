@@ -21,8 +21,7 @@ class _BleContext:
     last_force2: float       = None
     rx_char:     str         = None
     tx_char:     str         = None
-
-    # Add new method to get both force readings
+    continuous_mode: bool    = False
 
 class BluetoothHandler:
     """Public API identical to the old class: connect(), disconnect(), get_force_reading()"""
@@ -50,34 +49,11 @@ class BluetoothHandler:
             
             return round(val1, 1), round(val2, 1)
 
-        # BLE path: ask for one reading and wait for notification
-        future = asyncio.run_coroutine_threadsafe(
-            self._get_both_forces_ble(), self._loop)
-        try:
-            return future.result(timeout=2)  # seconds
-        except Exception as e:
-            print(f"Error getting force readings: {e}")
-            return "Timeout", "Timeout"
-
-    async def _get_both_forces_ble(self):
-        # Reset values
-        self._ctx.last_force = None
-        self._ctx.last_force2 = None
-        
-        # Send request
-        try:
-            await self._ctx.client.write_gatt_char(self._ctx.rx_char, b"GET_FORCE\n")
-        except Exception as e:
-            print(f"Error sending command: {e}")
-            return "Error", "Error"
-
-        # Wait for response
-        for _ in range(20):  # 20 × 50 ms = 1 s max wait
-            await asyncio.sleep(0.05)
-            if self._ctx.last_force is not None:
-                # Return both values, or second as None if not available
-                return self._ctx.last_force, getattr(self._ctx.last_force2, None)
-        return "Timeout", "Timeout"
+        # Return the last values received in continuous mode
+        # If we don't have readings yet, wait a short time for them to come in
+        if self._ctx.last_force is None:
+            time.sleep(0.2)  # Short wait for initial readings
+        return self._ctx.last_force or "N/A", self._ctx.last_force2 or "N/A"
 
     # ---------- public -----------
     def connect(self) -> bool:
@@ -94,6 +70,13 @@ class BluetoothHandler:
 
         fut = asyncio.run_coroutine_threadsafe(self._async_connect(), self._loop)
         self.is_connected = fut.result(timeout=15)
+        
+        # Start continuous readings if connected
+        if self.is_connected and not self.simulated:
+            fut = asyncio.run_coroutine_threadsafe(
+                self._start_continuous_readings(), self._loop)
+            fut.result(timeout=5)
+            
         return self.is_connected
 
     def disconnect(self):
@@ -103,6 +86,13 @@ class BluetoothHandler:
             self.is_connected = False
             return
 
+        # Stop continuous readings first
+        if self._ctx.continuous_mode:
+            fut = asyncio.run_coroutine_threadsafe(
+                self._stop_continuous_readings(), self._loop)
+            fut.result(timeout=5)
+
+        # Now disconnect
         fut = asyncio.run_coroutine_threadsafe(self._async_disconnect(), self._loop)
         fut.result(timeout=5)
         self.is_connected = False
@@ -118,13 +108,11 @@ class BluetoothHandler:
             self._sim_val = val
             return round(val, 1)
 
-        # BLE path: ask for one reading and wait for notification
-        future = asyncio.run_coroutine_threadsafe(
-            self._get_force_ble(), self._loop)
-        try:
-            return future.result(timeout=2)     # seconds
-        except Exception:
-            return "Timeout"
+        # Return the last value received in continuous mode
+        # If we don't have a reading yet, wait a short time for it to come in
+        if self._ctx.last_force is None:
+            time.sleep(0.2)  # Short wait for initial readings
+        return self._ctx.last_force or "N/A"
 
     # ---------- asyncio internals ----------
     async def _async_connect(self) -> bool:
@@ -144,7 +132,6 @@ class BluetoothHandler:
             return False
 
         # 3) cache characteristics
-        # The issue is here - get_services() returns a dict-like object, not a list of UUIDs
         services = await client.get_services()
         
         # Debugging: Print all services
@@ -184,6 +171,8 @@ class BluetoothHandler:
         self._ctx.rx_char = rx_char
         self._ctx.tx_char = tx_char
         self._ctx.last_force = None
+        self._ctx.last_force2 = None
+        self._ctx.continuous_mode = False
 
         # 4) subscribe for notifications
         await client.start_notify(tx_char, self._notify_cb)
@@ -194,29 +183,36 @@ class BluetoothHandler:
         if self._ctx.client and self._ctx.client.is_connected:
             await self._ctx.client.disconnect()
         self._ctx = _BleContext()
-
-    async def _get_force_ble(self) -> float:
-        # send GET_FORCE\n and wait for one notification
-        self._ctx.last_force = None
-        print(f"Sending GET_FORCE command...")
         
+    async def _start_continuous_readings(self):
+        """Start continuous force readings from the device"""
+        if not self._ctx.client or not self._ctx.client.is_connected:
+            return False
+            
         try:
-            await self._ctx.client.write_gatt_char(self._ctx.rx_char, b"GET_FORCE\n")
-            print("Command sent successfully")
+            # Send START_FORCE_READING command
+            await self._ctx.client.write_gatt_char(self._ctx.rx_char, b"START_FORCE_READING\n")
+            print(f"Started continuous readings for {self.device_name}")
+            self._ctx.continuous_mode = True
+            return True
         except Exception as e:
-            print(f"Error sending command: {e}")
-            return "Error"
-
-        # wait until _notify_cb fills in the value
-        print("Waiting for response...")
-        for i in range(20):   # 20 × 50 ms = 1 s max wait
-            await asyncio.sleep(0.05)
-            if self._ctx.last_force is not None:
-                print(f"Received response: {self._ctx.last_force}")
-                return self._ctx.last_force
-            if i % 4 == 0:  # Every ~200ms
-                print(f"Still waiting... ({i*50} ms)")
-        return "Timeout"
+            print(f"Error starting continuous readings: {e}")
+            return False
+    
+    async def _stop_continuous_readings(self):
+        """Stop continuous force readings from the device"""
+        if not self._ctx.client or not self._ctx.client.is_connected:
+            return False
+            
+        try:
+            # Send STOP_FORCE_READING command
+            await self._ctx.client.write_gatt_char(self._ctx.rx_char, b"STOP_FORCE_READING\n")
+            print(f"Stopped continuous readings for {self.device_name}")
+            self._ctx.continuous_mode = False
+            return True
+        except Exception as e:
+            print(f"Error stopping continuous readings: {e}")
+            return False
 
     def _notify_cb(self, _char_uuid, data: bytearray):
         try:
