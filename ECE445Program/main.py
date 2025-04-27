@@ -170,65 +170,63 @@ class CTCForceApp:
                               padx=20, pady=10)
         title_label.place(relx=0.5, rely=0.15, anchor="center")
         
-        # Button style - large buttons with consistent styling
-        button_width = 25
-        button_height = 2
-        button_font = ("Helvetica", 16)
+        # Button style - using labels instead of buttons for a completely invisible button effect
+        button_font = ("Impact", 22, "underline")
         button_fg = "white"
         pady_between = 70  # More space between buttons
         
-        # Create menu buttons with modern styling - positioned directly on root
-        standard_button = tk.Button(self.root, 
+        # Create menu buttons as labels with binding for click events
+        standard_button = tk.Label(self.root, 
                                   text="Standard Force Measuring", 
-                                  command=self.open_force_measurement,
-                                  width=button_width,
-                                  height=button_height,
                                   font=button_font,
-                                  bg="#3498db",  # Blue
+                                  bg="#1e3a5c",  # Match the background
                                   fg=button_fg,
-                                  activebackground="#2980b9",  # Darker blue
-                                  relief=tk.FLAT,  # Flat button look
-                                  borderwidth=0)   # No border
-        standard_button.place(relx=0.5, rely=0.3, anchor="center")
+                                  cursor="hand2")  # Change cursor to hand when hovering
+        standard_button.place(relx=0.1, rely=0.3, anchor="w")
         
-        training_button = tk.Button(self.root, 
+        # Bind click and hover events
+        standard_button.bind("<Button-1>", lambda e: self.open_force_measurement())
+        standard_button.bind("<Enter>", lambda e: standard_button.config(fg="#3498db"))
+        standard_button.bind("<Leave>", lambda e: standard_button.config(fg="white"))
+        
+        training_button = tk.Label(self.root, 
                                   text="Training Modes", 
-                                  command=self.open_training_modes,
-                                  width=button_width,
-                                  height=button_height,
                                   font=button_font,
-                                  bg="#e74c3c",  # Red
+                                  bg="#1e3a5c",  # Match the background
                                   fg=button_fg,
-                                  activebackground="#c0392b",  # Darker red
-                                  relief=tk.FLAT,
-                                  borderwidth=0)
-        training_button.place(relx=0.5, rely=0.45, anchor="center")
+                                  cursor="hand2")
+        training_button.place(relx=0.1, rely=0.45, anchor="w")
         
-        games_button = tk.Button(self.root, 
+        # Bind click and hover events
+        training_button.bind("<Button-1>", lambda e: self.open_training_modes())
+        training_button.bind("<Enter>", lambda e: training_button.config(fg="#e74c3c"))
+        training_button.bind("<Leave>", lambda e: training_button.config(fg="white"))
+        
+        games_button = tk.Label(self.root, 
                                text="Mini Games", 
-                               command=self.open_mini_games,
-                               width=button_width,
-                               height=button_height,
                                font=button_font,
-                               bg="#2ecc71",  # Green
+                               bg="#1e3a5c",  # Match the background
                                fg=button_fg,
-                               activebackground="#27ae60",  # Darker green
-                               relief=tk.FLAT,
-                               borderwidth=0)
-        games_button.place(relx=0.5, rely=0.6, anchor="center")
+                               cursor="hand2")
+        games_button.place(relx=0.1, rely=0.6, anchor="w")
         
-        settings_button = tk.Button(self.root, 
+        # Bind click and hover events
+        games_button.bind("<Button-1>", lambda e: self.open_mini_games())
+        games_button.bind("<Enter>", lambda e: games_button.config(fg="#2ecc71"))
+        games_button.bind("<Leave>", lambda e: games_button.config(fg="white"))
+        
+        settings_button = tk.Label(self.root, 
                                   text="Settings", 
-                                  command=self.open_settings,
-                                  width=button_width,
-                                  height=button_height,
                                   font=button_font,
-                                  bg="#9b59b6",  # Purple
+                                  bg="#1e3a5c",  # Match the background
                                   fg=button_fg,
-                                  activebackground="#8e44ad",  # Darker purple
-                                  relief=tk.FLAT,
-                                  borderwidth=0)
-        settings_button.place(relx=0.5, rely=0.75, anchor="center")
+                                  cursor="hand2")
+        settings_button.place(relx=0.1, rely=0.75, anchor="w")
+        
+        # Bind click and hover events
+        settings_button.bind("<Button-1>", lambda e: self.open_settings())
+        settings_button.bind("<Enter>", lambda e: settings_button.config(fg="#9b59b6"))
+        settings_button.bind("<Leave>", lambda e: settings_button.config(fg="white"))
         
         # Add version info at the bottom
         version_label = tk.Label(self.root,
@@ -326,19 +324,20 @@ class CTCForceApp:
         self.force_bar2 = self.force_bar_bg2.create_rectangle(0, 0, 0, 40, fill="#e74c3c", outline="")
         
         # Force labels
+        # Force labels
         force_scale_frame1 = tk.Frame(self.frame1, bg="#ffffff")
         force_scale_frame1.pack(fill="x")
         tk.Label(force_scale_frame1, text="0 N", 
-               font=("Helvetica", 10), bg="#ffffff").pack(side="left")
-        tk.Label(force_scale_frame1, text="1000 N", 
-               font=("Helvetica", 10), bg="#ffffff").pack(side="right")
-        
+            font=("Helvetica", 10), bg="#ffffff").pack(side="left")
+        tk.Label(force_scale_frame1, text="1500 N",  # Changed from 1000 N to 1500 N
+            font=("Helvetica", 10), bg="#ffffff").pack(side="right")
+
         force_scale_frame2 = tk.Frame(self.frame2, bg="#ffffff")
         force_scale_frame2.pack(fill="x")
         tk.Label(force_scale_frame2, text="0 N", 
-               font=("Helvetica", 10), bg="#ffffff").pack(side="left")
-        tk.Label(force_scale_frame2, text="1000 N", 
-               font=("Helvetica", 10), bg="#ffffff").pack(side="right")
+            font=("Helvetica", 10), bg="#ffffff").pack(side="left")
+        tk.Label(force_scale_frame2, text="1500 N",  # Changed from 1000 N to 1500 N
+            font=("Helvetica", 10), bg="#ffffff").pack(side="right")
         
         # Connect buttons with modern styling
         button_frame1 = tk.Frame(self.frame1, bg="#ffffff")
@@ -596,37 +595,48 @@ class CTCForceApp:
         while self.running:
             # Only update if we're in the force measurement screen
             if hasattr(self, 'force_label1') and self.force_label1.winfo_exists():
-                # Update ESP32 #1 readings
+                # Update ESP32 #1 readings - now get both values at once
                 if self.bt_handler1.is_connected:
                     try:
-                        force1 = self.bt_handler1.get_force_reading()
+                        force1, force2 = self.bt_handler1.get_both_force_readings()
+                        
+                        # Update first force reading display
                         if isinstance(force1, (int, float)):
                             self.force_label1.config(text=f"Force: {force1} N")
-                            # Update force bar - scale from 0-1000 to 0-1000 pixels
-                            bar_width = min(1000, max(0, force1))
+                            # Update force bar - scale from 0-1500 to 0-width of bar
+                            bar_width = min(self.force_bar_bg1.winfo_width(), max(0, force1/1500 * self.force_bar_bg1.winfo_width()))
                             self.force_bar_bg1.coords(self.force_bar1, 0, 0, bar_width, 40)
                         else:
                             self.force_label1.config(text=f"Force: {force1}")
+                        
+                        # Update second force reading if we're using a single ESP32 for both sensors
+                        if isinstance(force2, (int, float)):
+                            self.force_label2.config(text=f"Force: {force2} N")
+                            # Update force bar - scale from 0-1500 to 0-width of bar
+                            bar_width = min(self.force_bar_bg2.winfo_width(), max(0, force2/1500 * self.force_bar_bg2.winfo_width()))
+                            self.force_bar_bg2.coords(self.force_bar2, 0, 0, bar_width, 40)
+                        
                     except Exception as e:
                         print(f"Error reading from ESP32_1: {e}")
                         self.force_label1.config(text="Force: Error reading")
                 
-                # Update ESP32 #2 readings
+                # If you're using a separate ESP32 for the second sensor, keep this code
+                # Otherwise, you can remove it if both sensors are connected to ESP32_1
                 if self.bt_handler2.is_connected:
                     try:
                         force2 = self.bt_handler2.get_force_reading()
                         if isinstance(force2, (int, float)):
                             self.force_label2.config(text=f"Force: {force2} N")
-                            # Update force bar - scale from 0-1000 to 0-1000 pixels
-                            bar_width = min(1000, max(0, force2))
+                            # Update force bar - scale from 0-1500 to 0-width of bar
+                            bar_width = min(self.force_bar_bg2.winfo_width(), max(0, force2/1500 * self.force_bar_bg2.winfo_width()))
                             self.force_bar_bg2.coords(self.force_bar2, 0, 0, bar_width, 40)
                         else:
                             self.force_label2.config(text=f"Force: {force2}")
                     except Exception as e:
                         print(f"Error reading from ESP32_2: {e}")
                         self.force_label2.config(text="Force: Error reading")
-            
-            time.sleep(0.1)  # Update frequently
+                
+                time.sleep(0.1)  # Update frequently
     
     def on_close(self):
         self.running = False

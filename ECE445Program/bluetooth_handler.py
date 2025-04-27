@@ -1,141 +1,232 @@
-import time
-import random
+# bluetooth_handler.py  – BLE UART implementation (falls back to simulation)
+import asyncio, threading, time, random, sys
+from dataclasses import dataclass
 
-# Flag to determine if we should use real or simulated Bluetooth
-USE_REAL_BLUETOOTH = False
+# Nordic‑UART UUIDs
+NUS_SERVICE      = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
+NUS_RX_CHAR      = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
+NUS_TX_CHAR      = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
 
 try:
-    if USE_REAL_BLUETOOTH:
-        import bluetooth
-        BLUETOOTH_AVAILABLE = True
-    else:
-        BLUETOOTH_AVAILABLE = False
+    from bleak import BleakScanner, BleakClient
+    BLE_READY = True
 except ImportError:
-    print("PyBluez not installed. Using simulation mode only.")
-    print("To use real Bluetooth, install with: pip install pybluez")
-    print("For Mac: brew install bluez")
-    print("For Ubuntu: sudo apt-get install libbluetooth-dev")
-    BLUETOOTH_AVAILABLE = False
+    BLE_READY = False
+    print("Bleak not installed – using simulation.")
+
+@dataclass
+class _BleContext:
+    client:      BleakClient = None
+    last_force:  float       = None
+    last_force2: float       = None
+    rx_char:     str         = None
+    tx_char:     str         = None
+
+    # Add new method to get both force readings
 
 class BluetoothHandler:
-    def __init__(self, device_name):
-        self.device_name = device_name
-        self.is_connected = False
-        self.socket = None
-        self.device_address = None
-        
-        # For demo purposes only (simulated values)
-        self.simulated_mode = True  # Even if Bluetooth is available, we can simulate
-        self.last_force_value = 0
-    
-    def discover_devices(self):
-        """
-        Discover nearby Bluetooth devices.
-        Returns a list of (device_address, device_name) tuples.
-        """
-        try:
-            if self.simulated_mode:
-                # Simulate finding the device
-                print(f"Simulating discovery of {self.device_name}")
-                return [(f"00:11:22:33:44:{ord(self.device_name[-1]):02x}", self.device_name)]
+    """Public API identical to the old class: connect(), disconnect(), get_force_reading()"""
+    def __init__(self, device_name: str):
+        self.device_name   = device_name
+        self.is_connected  = False
+        self.simulated     = not BLE_READY
+        self._ctx          = _BleContext()
+        self._loop         = None   # background asyncio loop
+
+
+    def get_both_force_readings(self):
+        """Get readings from both force sensors"""
+        if not self.is_connected:
+            return "N/A", "N/A"
+        if self.simulated:
+            # Simple animation for both values
+            val1 = getattr(self, "_sim_val1", 500)
+            val1 = max(0, min(1500, val1 + random.uniform(-50, 50)))
+            self._sim_val1 = val1
             
-            print("Scanning for Bluetooth devices...")
-            nearby_devices = bluetooth.discover_devices(duration=8, lookup_names=True)
-            print(f"Found {len(nearby_devices)} devices")
-            return nearby_devices
+            val2 = getattr(self, "_sim_val2", 500)
+            val2 = max(0, min(1500, val2 + random.uniform(-50, 50)))
+            self._sim_val2 = val2
+            
+            return round(val1, 1), round(val2, 1)
+
+        # BLE path: ask for one reading and wait for notification
+        future = asyncio.run_coroutine_threadsafe(
+            self._get_both_forces_ble(), self._loop)
+        try:
+            return future.result(timeout=2)  # seconds
         except Exception as e:
-            print(f"Error discovering devices: {e}")
-            return []
-    
-    def connect(self):
-        """
-        Connect to the ESP32 device.
-        Returns True if connection is successful, False otherwise.
-        """
+            print(f"Error getting force readings: {e}")
+            return "Timeout", "Timeout"
+
+    async def _get_both_forces_ble(self):
+        # Reset values
+        self._ctx.last_force = None
+        self._ctx.last_force2 = None
+        
+        # Send request
+        try:
+            await self._ctx.client.write_gatt_char(self._ctx.rx_char, b"GET_FORCE\n")
+        except Exception as e:
+            print(f"Error sending command: {e}")
+            return "Error", "Error"
+
+        # Wait for response
+        for _ in range(20):  # 20 × 50 ms = 1 s max wait
+            await asyncio.sleep(0.05)
+            if self._ctx.last_force is not None:
+                # Return both values, or second as None if not available
+                return self._ctx.last_force, getattr(self._ctx.last_force2, None)
+        return "Timeout", "Timeout"
+
+    # ---------- public -----------
+    def connect(self) -> bool:
         if self.is_connected:
             return True
-        
-        if self.simulated_mode or not BLUETOOTH_AVAILABLE:
-            # Simulate connection
-            print(f"Simulating connection to {self.device_name}")
-            time.sleep(1)  # Simulate connection delay
+        if self.simulated:
             self.is_connected = True
-            self.device_address = f"00:11:22:33:44:{ord(self.device_name[-1]):02x}"
             return True
-        
-        try:
-            # Find the ESP32 in the list of available devices
-            found_devices = self.discover_devices()
-            target_address = None
-            
-            for addr, name in found_devices:
-                if name == self.device_name:
-                    target_address = addr
-                    break
-            
-            if not target_address:
-                print(f"Device {self.device_name} not found")
-                return False
-            
-            # Connect to the device
-            self.device_address = target_address
-            self.socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-            self.socket.connect((target_address, 1))  # Use RFCOMM channel 1
-            self.is_connected = True
-            print(f"Connected to {self.device_name} at {target_address}")
-            return True
-        
-        except Exception as e:
-            print(f"Error connecting to {self.device_name}: {e}")
-            self.is_connected = False
-            return False
-    
+
+        # spin up background event‑loop thread once
+        if self._loop is None:
+            self._loop = asyncio.new_event_loop()
+            threading.Thread(target=self._loop.run_forever, daemon=True).start()
+
+        fut = asyncio.run_coroutine_threadsafe(self._async_connect(), self._loop)
+        self.is_connected = fut.result(timeout=15)
+        return self.is_connected
+
     def disconnect(self):
-        """
-        Disconnect from the ESP32 device.
-        """
         if not self.is_connected:
             return
-        
-        if self.simulated_mode or not BLUETOOTH_AVAILABLE:
-            # Simulate disconnection
-            print(f"Simulating disconnection from {self.device_name}")
+        if self.simulated:
             self.is_connected = False
             return
-        
-        try:
-            if self.socket:
-                self.socket.close()
-            self.is_connected = False
-            print(f"Disconnected from {self.device_name}")
-        except Exception as e:
-            print(f"Error disconnecting from {self.device_name}: {e}")
-    
+
+        fut = asyncio.run_coroutine_threadsafe(self._async_disconnect(), self._loop)
+        fut.result(timeout=5)
+        self.is_connected = False
+
     def get_force_reading(self):
-        """
-        Get the current force reading from the ESP32.
-        Returns the force value in Newtons.
-        """
+        """Blocking call used by Tk thread → returns float or 'N/A'."""
         if not self.is_connected:
             return "N/A"
+        if self.simulated:
+            # simple animation
+            val = getattr(self, "_sim_val", 500)
+            val = max(0, min(1000, val + random.uniform(-50, 50)))
+            self._sim_val = val
+            return round(val, 1)
+
+        # BLE path: ask for one reading and wait for notification
+        future = asyncio.run_coroutine_threadsafe(
+            self._get_force_ble(), self._loop)
+        try:
+            return future.result(timeout=2)     # seconds
+        except Exception:
+            return "Timeout"
+
+    # ---------- asyncio internals ----------
+    async def _async_connect(self) -> bool:
+        # 1) scan for the device
+        devices = await BleakScanner.discover(timeout=4.0)
+        target = next((d for d in devices if d.name == self.device_name), None)
+        if not target:
+            print(f"{self.device_name} not found.")
+            return False
+
+        # 2) connect
+        client = BleakClient(target.address)
+        try:
+            await client.connect(timeout=5.0)
+        except Exception as e:
+            print(f"BLE connect error: {e}")
+            return False
+
+        # 3) cache characteristics
+        # The issue is here - get_services() returns a dict-like object, not a list of UUIDs
+        services = await client.get_services()
         
-        if self.simulated_mode or not BLUETOOTH_AVAILABLE:
-            # Generate simulated force readings from 0-1000 N
-            change = random.uniform(-50, 50)
-            self.last_force_value = max(0, min(1000, self.last_force_value + change))
-            return round(self.last_force_value, 1)
+        # Debugging: Print all services
+        print(f"Services found on device {self.device_name}:")
+        for service in services:
+            print(f"  Service: {service.uuid}")
+        
+        # Check if our NUS service exists
+        nus_service = None
+        for service in services:
+            if service.uuid.lower() == NUS_SERVICE.lower():
+                nus_service = service
+                break
+                
+        if not nus_service:
+            print(f"NUS service ({NUS_SERVICE}) not found on device!")
+            await client.disconnect()
+            return False
+        
+        print(f"Found NUS service: {nus_service.uuid}")
+        
+        # Find the characteristic UUIDs
+        rx_char = None
+        tx_char = None
+        for char in nus_service.characteristics:
+            if char.uuid.lower() == NUS_RX_CHAR.lower():
+                rx_char = char.uuid
+            elif char.uuid.lower() == NUS_TX_CHAR.lower():
+                tx_char = char.uuid
+        
+        if not rx_char or not tx_char:
+            print("Required characteristics not found!")
+            await client.disconnect()
+            return False
+            
+        self._ctx.client = client
+        self._ctx.rx_char = rx_char
+        self._ctx.tx_char = tx_char
+        self._ctx.last_force = None
+
+        # 4) subscribe for notifications
+        await client.start_notify(tx_char, self._notify_cb)
+        print(f"Successfully connected to {self.device_name}")
+        return True
+
+    async def _async_disconnect(self):
+        if self._ctx.client and self._ctx.client.is_connected:
+            await self._ctx.client.disconnect()
+        self._ctx = _BleContext()
+
+    async def _get_force_ble(self) -> float:
+        # send GET_FORCE\n and wait for one notification
+        self._ctx.last_force = None
+        print(f"Sending GET_FORCE command...")
         
         try:
-            # Send command to request force reading
-            self.socket.send("GET_FORCE")
-            
-            # Wait for response
-            data = self.socket.recv(1024)
-            
-            # Parse the received data (assuming it's a string with the force value)
-            force_value = float(data.decode().strip())
-            return force_value
-        
+            await self._ctx.client.write_gatt_char(self._ctx.rx_char, b"GET_FORCE\n")
+            print("Command sent successfully")
         except Exception as e:
-            print(f"Error getting force reading from {self.device_name}: {e}")
-            return "Error" 
+            print(f"Error sending command: {e}")
+            return "Error"
+
+        # wait until _notify_cb fills in the value
+        print("Waiting for response...")
+        for i in range(20):   # 20 × 50 ms = 1 s max wait
+            await asyncio.sleep(0.05)
+            if self._ctx.last_force is not None:
+                print(f"Received response: {self._ctx.last_force}")
+                return self._ctx.last_force
+            if i % 4 == 0:  # Every ~200ms
+                print(f"Still waiting... ({i*50} ms)")
+        return "Timeout"
+
+    def _notify_cb(self, _char_uuid, data: bytearray):
+        try:
+            # Data now comes as "force1,force2"
+            values = data.decode().strip().split(',')
+            if len(values) >= 1:
+                self._ctx.last_force = float(values[0])
+                # Store second value if available
+                if len(values) >= 2:
+                    self._ctx.last_force2 = float(values[1])
+        except Exception as e:
+            print(f"Error processing notification: {e}")
+            pass
