@@ -37,17 +37,6 @@ class BluetoothHandler:
         """Get readings from both force sensors"""
         if not self.is_connected:
             return "N/A", "N/A"
-        if self.simulated:
-            # Simple animation for both values
-            val1 = getattr(self, "_sim_val1", 500)
-            val1 = max(0, min(1500, val1 + random.uniform(-50, 50)))
-            self._sim_val1 = val1
-            
-            val2 = getattr(self, "_sim_val2", 500)
-            val2 = max(0, min(1500, val2 + random.uniform(-50, 50)))
-            self._sim_val2 = val2
-            
-            return round(val1, 1), round(val2, 1)
 
         # Return the last values received in continuous mode
         # If we don't have readings yet, wait a short time for them to come in
@@ -58,9 +47,6 @@ class BluetoothHandler:
     # ---------- public -----------
     def connect(self) -> bool:
         if self.is_connected:
-            return True
-        if self.simulated:
-            self.is_connected = True
             return True
 
         # spin up background event‑loop thread once
@@ -82,9 +68,7 @@ class BluetoothHandler:
     def disconnect(self):
         if not self.is_connected:
             return
-        if self.simulated:
-            self.is_connected = False
-            return
+
 
         # Stop continuous readings first
         if self._ctx.continuous_mode:
@@ -101,12 +85,7 @@ class BluetoothHandler:
         """Blocking call used by Tk thread → returns float or 'N/A'."""
         if not self.is_connected:
             return "N/A"
-        if self.simulated:
-            # simple animation
-            val = getattr(self, "_sim_val", 500)
-            val = max(0, min(1000, val + random.uniform(-50, 50)))
-            self._sim_val = val
-            return round(val, 1)
+
 
         # Return the last value received in continuous mode
         # If we don't have a reading yet, wait a short time for it to come in
