@@ -60,7 +60,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.force_screen      = self._create_force_screen()
         self.training_screen   = self._create_training_screen()
         self.reaction_screen   = self._create_reaction_screen()
-        self.power_screen      = self._create_power_screen()
         self.speed_screen      = self._create_speed_screen()
         self.games_screen      = self._create_games_screen()
         self.settings_screen   = self._create_settings_screen()
@@ -72,7 +71,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.force_screen,
             self.training_screen,
             self.reaction_screen,
-            self.power_screen,
             self.speed_screen,
             self.games_screen,
             self.settings_screen
@@ -127,9 +125,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _create_main_menu(self):
         w = QtWidgets.QWidget()
-        w.setMinimumSize(100, 100) # Allow the widget to shrink more
-        # Create a main layout that will hold everything
-        main_layout = QtWidgets.QGridLayout(w) # Use GridLayout for overlaying
+        w.setMinimumSize(100, 100)
+        main_layout = QtWidgets.QGridLayout(w)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
@@ -137,18 +134,25 @@ class MainWindow(QtWidgets.QMainWindow):
         bg_label = QtWidgets.QLabel()
         bg_path = os.path.join("assets", "homescreen.png")
         if os.path.isfile(bg_path):
-            pix = QtGui.QPixmap(bg_path) # Load pixmap without initial scaling
+            pix = QtGui.QPixmap(bg_path)
             bg_label.setPixmap(pix)
-            bg_label.setScaledContents(True) # Allow pixmap to scale with label size
-
-        # Add bg_label to cover the whole grid cell (0,0)
+            bg_label.setScaledContents(True)
         main_layout.addWidget(bg_label, 0, 0)
 
-        # Container for buttons and version label (will be placed on top of bg_label)
+        # Container for buttons and version label
         content_container = QtWidgets.QWidget()
-        content_container.setStyleSheet("background: transparent;") # Make it transparent
+        content_container.setStyleSheet("background: transparent;")
         content_layout = QtWidgets.QVBoxLayout(content_container)
-        content_layout.setContentsMargins(120, 50, 120, 30) # Adjust margins as needed
+        content_layout.setContentsMargins(120, 50, 120, 30)
+
+        # — New title label inserted here —
+        title_lbl = QtWidgets.QLabel("Electronic Martial Arts Force Sensor")
+        title_lbl.setFont(QtGui.QFont("Helvetica", 28, QtGui.QFont.Bold))
+        title_lbl.setStyleSheet("color: white;")
+        title_lbl.setAlignment(QtCore.Qt.AlignCenter)
+        content_layout.addWidget(title_lbl)
+        content_layout.addSpacing(40)
+        # — end title —
 
         # Button styling
         btn_style = (
@@ -157,33 +161,92 @@ class MainWindow(QtWidgets.QMainWindow):
             "QPushButton:hover { background-color: #155a75; }"
         )
 
-        content_layout.addStretch(2) # Add stretch above buttons
+        content_layout.addStretch(2)
 
-        # Place buttons using the content layout
         for idx, (text, method) in enumerate([
             ("Standard Force Measuring", self._show_force),
-            ("Training Modes",             self._show_training),
-            ("Mini Games",                self._show_games),
-            ("Settings",                  self._show_settings),
+            ("Training Modes",           self._show_training),
+            ("Mini Games",              self._show_games),
+            ("Settings",                self._show_settings),
         ]):
             btn = QtWidgets.QPushButton(text)
             btn.setStyleSheet(btn_style)
             btn.clicked.connect(method)
             content_layout.addWidget(btn, alignment=QtCore.Qt.AlignLeft)
-            if idx < 3: # Add spacing between buttons
+            if idx < 3:
                 content_layout.addSpacing(20)
 
-        content_layout.addStretch(3) # Add stretch below buttons
+        content_layout.addStretch(3)
 
         # Version label
         ver_lbl = QtWidgets.QLabel("CTC Force System v1.0")
-        ver_lbl.setStyleSheet("color: white; background: rgba(0,0,0,0.5); padding: 2px;") # Semi-transparent background for visibility
+        ver_lbl.setStyleSheet("color: white; background: rgba(0,0,0,0.5); padding: 2px;")
         content_layout.addWidget(ver_lbl, alignment=QtCore.Qt.AlignCenter)
 
-        # Add the content container on top of the background label in the grid
         main_layout.addWidget(content_container, 0, 0)
-
         return w
+
+
+    # def _create_main_menu(self):
+    #     w = QtWidgets.QWidget()
+    #     w.setMinimumSize(100, 100) # Allow the widget to shrink more
+    #     # Create a main layout that will hold everything
+    #     main_layout = QtWidgets.QGridLayout(w) # Use GridLayout for overlaying
+    #     main_layout.setContentsMargins(0, 0, 0, 0)
+    #     main_layout.setSpacing(0)
+
+
+    #     # Background Label setup
+    #     bg_label = QtWidgets.QLabel()
+    #     bg_path = os.path.join("assets", "homescreen.png")
+    #     if os.path.isfile(bg_path):
+    #         pix = QtGui.QPixmap(bg_path) # Load pixmap without initial scaling
+    #         bg_label.setPixmap(pix)
+    #         bg_label.setScaledContents(True) # Allow pixmap to scale with label size
+
+    #     # Add bg_label to cover the whole grid cell (0,0)
+    #     main_layout.addWidget(bg_label, 0, 0)
+
+    #     # Container for buttons and version label (will be placed on top of bg_label)
+    #     content_container = QtWidgets.QWidget()
+    #     content_container.setStyleSheet("background: transparent;") # Make it transparent
+    #     content_layout = QtWidgets.QVBoxLayout(content_container)
+    #     content_layout.setContentsMargins(120, 50, 120, 30) # Adjust margins as needed
+
+    #     # Button styling
+    #     btn_style = (
+    #         "QPushButton { background-color: #1e3a5c; color: white;"
+    #         " border-radius: 15px; padding: 12px 24px; font: bold 20px Impact; }"
+    #         "QPushButton:hover { background-color: #155a75; }"
+    #     )
+
+    #     content_layout.addStretch(2) # Add stretch above buttons
+
+    #     # Place buttons using the content layout
+    #     for idx, (text, method) in enumerate([
+    #         ("Standard Force Measuring", self._show_force),
+    #         ("Training Modes",             self._show_training),
+    #         ("Mini Games",                self._show_games),
+    #         ("Settings",                  self._show_settings),
+    #     ]):
+    #         btn = QtWidgets.QPushButton(text)
+    #         btn.setStyleSheet(btn_style)
+    #         btn.clicked.connect(method)
+    #         content_layout.addWidget(btn, alignment=QtCore.Qt.AlignLeft)
+    #         if idx < 3: # Add spacing between buttons
+    #             content_layout.addSpacing(20)
+
+    #     content_layout.addStretch(3) # Add stretch below buttons
+
+    #     # Version label
+    #     ver_lbl = QtWidgets.QLabel("CTC Force System v1.0")
+    #     ver_lbl.setStyleSheet("color: white; background: rgba(0,0,0,0.5); padding: 2px;") # Semi-transparent background for visibility
+    #     content_layout.addWidget(ver_lbl, alignment=QtCore.Qt.AlignCenter)
+
+    #     # Add the content container on top of the background label in the grid
+    #     main_layout.addWidget(content_container, 0, 0)
+
+    #     return w
 
     def _create_force_screen(self):
         w = QtWidgets.QWidget()
@@ -326,7 +389,6 @@ class MainWindow(QtWidgets.QMainWindow):
         vlayout.addLayout(hlayout)
         # Drill buttons
         for txt,fn in [("Reaction Drills", self._show_reaction),
-                       ("Power Drill",      self._show_power),
                        ("Speed Drill",      self._show_speed)]:
             btn = QtWidgets.QPushButton(txt)
             btn.setFont(QtGui.QFont("Helvetica",18))
@@ -364,17 +426,6 @@ class MainWindow(QtWidgets.QMainWindow):
         v.addWidget(back, alignment=QtCore.Qt.AlignCenter)
         return w
 
-    def _create_power_screen(self):
-        w = QtWidgets.QWidget()
-        v = QtWidgets.QVBoxLayout(w)
-        lbl = QtWidgets.QLabel("Power Drill Mode")
-        lbl.setFont(QtGui.QFont("Helvetica",24,QtGui.QFont.Bold))
-        lbl.setAlignment(QtCore.Qt.AlignCenter)
-        v.addWidget(lbl)
-        back = QtWidgets.QPushButton("← Back")
-        back.clicked.connect(lambda: self.stack.setCurrentWidget(self.training_screen))
-        v.addWidget(back, alignment=QtCore.Qt.AlignCenter)
-        return w
 
     def _create_speed_screen(self):
         w = QtWidgets.QWidget()
@@ -533,7 +584,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def _show_force(self):       self.stack.setCurrentWidget(self.force_screen)
     def _show_training(self):    self.stack.setCurrentWidget(self.training_screen)
     def _show_reaction(self):    self.stack.setCurrentWidget(self.reaction_screen)
-    def _show_power(self):       self.stack.setCurrentWidget(self.power_screen)
     def _show_speed(self):       self.stack.setCurrentWidget(self.speed_screen)
     def _show_games(self):       self.stack.setCurrentWidget(self.games_screen)
     def _show_settings(self):    self.stack.setCurrentWidget(self.settings_screen)
