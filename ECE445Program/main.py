@@ -538,7 +538,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Reset combo count and restore the default time limit
         self.speed_combo       = 0
-        self.speed_time_limit  = 2.0
+        self.speed_time_limit  = 4.0
         self.combo_lbl.setText("Combo: 0")
 
         # Kick off the first prompt
@@ -873,11 +873,18 @@ class MainWindow(QtWidgets.QMainWindow):
             self._update_kicking_grade()
 
         if self.stack.currentWidget() == self.reaction_screen and self.reaction_active:
-            lv = self.last_valid_forces[0]
-            if lv['max_force'] is not None and lv['max_force'] >= self.reaction_threshold:
-                rt_ms = ((time.perf_counter() - self.reaction_start_time)*1000)
-                self.reaction_time_lbl.setText(f"Reaction Time: {rt_ms:.0f} ms")
-                self.reaction_active = False
+            if self.force_widgets:
+                val = self.force_widgets[0]['bar'].value()
+                if val >= self.reaction_threshold:
+                    # compute reaction time
+                    rt_ms = (time.perf_counter() - self.reaction_start_time) * 1000
+                    # safeguard: under 50 ms is invalid (you can’t predict the beep)
+                    if rt_ms < 50:
+                        self.reaction_time_lbl.setText("Invalid: too fast!")
+                    else:
+                        self.reaction_time_lbl.setText(f"Reaction Time: {rt_ms:.0f} ms")
+                    # stop listening until next start
+                    self.reaction_active = False
 
         # Speed combo drill detection using last_valid_forces[0]
         if self.stack.currentWidget() == self.speed_screen and self.speed_active:
