@@ -24,7 +24,7 @@ const unsigned long READING_INTERVAL = 10; // Read sensors every 10ms
 
 // Peak detection variables
 unsigned long lastSendTime = 0;
-const unsigned long SEND_INTERVAL = 500; // Regular heartbeat interval and hit detection window
+const unsigned long SEND_INTERVAL = 300; // Regular heartbeat interval and hit detection window
 float peakForce1 = 0.0;
 float peakForce2 = 0.0;
 bool hasPeakAboveThreshold = false;
@@ -196,9 +196,13 @@ void loop() {
       
       // Check if hit detection window has expired
       if (inHitDetectionWindow && (currentTime - hitStartTime >= SEND_INTERVAL)) {
-        // Hit window completed, send peak values
-        char peakStr[20];
-        sprintf(peakStr, "%.1f,%.1f", peakForce1, peakForce2);
+        // Hit window completed, send peak values and time since first detection
+        unsigned long timeSinceHitDetection = currentTime - hitStartTime;
+        unsigned long timeSinceLastSend = hitStartTime - lastSendTime;
+        
+        // Increase buffer size to accommodate the additional timing values
+        char peakStr[40];
+        sprintf(peakStr, "%.1f,%.1f,%lu,%lu", peakForce1, peakForce2, timeSinceLastSend, timeSinceHitDetection);
         
         // Send peak values
         pTxCharacteristic->setValue(peakStr);
@@ -238,9 +242,9 @@ void loop() {
     
     // Send heartbeat readings every SEND_INTERVAL when no hit is in progress
     if (!inHitDetectionWindow && (currentTime - lastSendTime >= SEND_INTERVAL)) {
-      // Send a zero reading as heartbeat
-      char heartbeatStr[20];
-      sprintf(heartbeatStr, "0.0,0.0");
+      // Send a zero reading as heartbeat (with zero time differences)
+      char heartbeatStr[40];
+      sprintf(heartbeatStr, "0.0,0.0,0,0");
       
       pTxCharacteristic->setValue(heartbeatStr);
       pTxCharacteristic->notify();

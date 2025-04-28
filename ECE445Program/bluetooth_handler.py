@@ -19,6 +19,8 @@ class _BleContext:
     client:      BleakClient = None
     last_force:  float       = None
     last_force2: float       = None
+    time_since_last: int     = None
+    time_since_hit: int      = None
     rx_char:     str         = None
     tx_char:     str         = None
     continuous_mode: bool    = False
@@ -34,15 +36,15 @@ class BluetoothHandler:
 
 
     def get_both_force_readings(self):
-        """Get readings from both force sensors"""
+        """Get readings from both force sensors and time since last message"""
         if not self.is_connected:
-            return "N/A", "N/A"
+            return "N/A", "N/A", 0, 0
 
         # Return the last values received in continuous mode
         # If we don't have readings yet, wait a short time for them to come in
         if self._ctx.last_force is None:
             time.sleep(0.2)  # Short wait for initial readings
-        return self._ctx.last_force or "N/A", self._ctx.last_force2 or "N/A"
+        return self._ctx.last_force or "N/A", self._ctx.last_force2 or "N/A", self._ctx.time_since_last or 0, self._ctx.time_since_hit or 0
 
     # ---------- public -----------
     def connect(self) -> bool:
@@ -151,6 +153,8 @@ class BluetoothHandler:
         self._ctx.tx_char = tx_char
         self._ctx.last_force = None
         self._ctx.last_force2 = None
+        self._ctx.time_since_last = None
+        self._ctx.time_since_hit = None
         self._ctx.continuous_mode = False
 
         # 4) subscribe for notifications
@@ -195,13 +199,23 @@ class BluetoothHandler:
 
     def _notify_cb(self, _char_uuid, data: bytearray):
         try:
-            # Data now comes as "force1,force2"
+            # Data now comes as "force1,force2,time_since_last,time_since_hit"
             values = data.decode().strip().split(',')
             if len(values) >= 1:
                 self._ctx.last_force = float(values[0])
                 # Store second value if available
                 if len(values) >= 2:
                     self._ctx.last_force2 = float(values[1])
+                # Store time since last send if available
+                if len(values) >= 3:
+                    self._ctx.time_since_last = int(values[2])
+                # Store time since hit detection if available
+                if len(values) >= 4:
+                    self._ctx.time_since_hit = int(values[3])
+                    if self._ctx.last_force > 200:  # Only print for significant force readings
+                        print(f"[DEBUG] Received hit with time_since_last: {self._ctx.time_since_last}ms, time_since_hit: {self._ctx.time_since_hit}ms, forces: {self._ctx.last_force}, {self._ctx.last_force2}")
+                else:
+                    self._ctx.time_since_hit = 0
         except Exception as e:
             print(f"Error processing notification: {e}")
             pass

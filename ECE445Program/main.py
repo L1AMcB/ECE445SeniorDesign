@@ -554,7 +554,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.reaction_active = True
 
     def _start_speed(self):
-            # Clear any old force reading so it won’t immediately trigger
+            # Clear any old force reading so it won't immediately trigger
         self.last_valid_forces[0]['max_force'] = None
         self.last_valid_forces[0]['accuracy']  = None
 
@@ -595,11 +595,18 @@ class MainWindow(QtWidgets.QMainWindow):
         esp_idx = 0  # Default to first ESP32
         if self.last_valid_forces[esp_idx]['max_force'] is not None and self.last_valid_forces[esp_idx]['max_force'] >= 220:
             max_force = self.last_valid_forces[esp_idx]['max_force']
-            accuracy = self.last_valid_forces[esp_idx]['accuracy']
+            raw_accuracy = self.last_valid_forces[esp_idx]['accuracy'] # Get raw accuracy
+
+            # Apply the curve
+            adjusted_accuracy = round(100 * (raw_accuracy / 100) ** 1.7)
+
+            # Calculate force percentage (200N = 20%, 1000N = 100%, >1000N can exceed 100%)
             force_percent = min(120, max(0, (max_force / 1000) * 100))
-            
-            # Grade calculation with new thresholds
-            grade_percent = (force_percent + accuracy) / 2
+
+            # Calculate grade as average of force percent and ADJUSTED accuracy
+            grade_percent = (force_percent + adjusted_accuracy) / 2
+
+            # Determine letter grade with new thresholds
             letter_grade = "F"
             if grade_percent >= 80:
                 letter_grade = "A"
@@ -613,7 +620,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.grade_value.setText(letter_grade)
             self.force_label.setText(f"{max_force} N")
             self.force_percent.setText(f"{force_percent:.1f}%")
-            self.accuracy_label.setText(f"{accuracy}%")
+            self.accuracy_label.setText(f"{adjusted_accuracy}%")
             
             # Set grade color
             grade_colors = {
@@ -658,11 +665,18 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.last_valid_forces[esp_idx]['max_force'] is not None and self.last_valid_forces[esp_idx]['max_force'] >= 220:
                 # Use existing values
                 max_force = self.last_valid_forces[esp_idx]['max_force']
-                accuracy = self.last_valid_forces[esp_idx]['accuracy']
+                raw_accuracy = self.last_valid_forces[esp_idx]['accuracy'] # Get raw accuracy
+
+                # Apply the curve
+                adjusted_accuracy = round(100 * (raw_accuracy / 100) ** 1.7)
+
+                # Calculate force percentage (200N = 20%, 1000N = 100%, >1000N can exceed 100%)
                 force_percent = min(120, max(0, (max_force / 1000) * 100))
-                
-                # Grade calculation with new thresholds
-                grade_percent = (force_percent + accuracy) / 2
+
+                # Calculate grade as average of force percent and ADJUSTED accuracy
+                grade_percent = (force_percent + adjusted_accuracy) / 2
+
+                # Determine letter grade with new thresholds
                 letter_grade = "F"
                 if grade_percent >= 80:
                     letter_grade = "A"
@@ -676,7 +690,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.grade_value.setText(letter_grade)
                 self.force_label.setText(f"{max_force} N")
                 self.force_percent.setText(f"{force_percent:.1f}%")
-                self.accuracy_label.setText(f"{accuracy}%")
+                self.accuracy_label.setText(f"{adjusted_accuracy}%")
                 
                 # Set grade color
                 grade_colors = {
@@ -709,14 +723,14 @@ class MainWindow(QtWidgets.QMainWindow):
         # Update ESP32 #1
         if self.bt1.is_connected and 0 in widgets_by_esp:
             try:
-                # Get both force readings from ESP32 #1
-                force1, force2 = self.bt1.get_both_force_readings()
+                # Get both force readings and time since last detection from ESP32 #1
+                force1, force2, time_since_last, time_since_hit = self.bt1.get_both_force_readings()
                 
                 # Check if readings are valid numbers
                 if isinstance(force1, (int, float)) and isinstance(force2, (int, float)):
                     # Apply calibration factor to force1 which reads consistently lower
                     # This ensures compatibility even if the ESP32 firmware hasn't been updated
-                    force1 *= 1.5
+                    force2 *= 1.35
                     
                     # Calculate current max force
                     max_force = max(force1, force2)
@@ -735,13 +749,19 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.last_valid_forces[0]['force2'] = force2
                         self.last_valid_forces[0]['max_force'] = max_force
                         self.last_valid_forces[0]['accuracy'] = accuracy
+                        # Store the time since last message for this hit
+                        self.last_valid_forces[0]['time_since_last'] = time_since_last
+                        # Store the time since hit detection for this hit
+                        self.last_valid_forces[0]['time_since_hit'] = time_since_hit
                     
                     # Always use last valid max force for display force
                     if self.last_valid_forces[0]['max_force'] is not None:
                         display_force = self.last_valid_forces[0]['max_force']
                         display_force1 = self.last_valid_forces[0]['force1']
                         display_force2 = self.last_valid_forces[0]['force2']
-                        display_accuracy = self.last_valid_forces[0]['accuracy']
+                        # Get raw accuracy and apply the curve for display
+                        raw_accuracy = self.last_valid_forces[0]['accuracy']
+                        display_accuracy = round(100 * (raw_accuracy / 100) ** 1.7) if raw_accuracy is not None else 0 # Apply curve here
                     else:
                         display_force = 0
                         display_force1 = 0
@@ -769,7 +789,9 @@ class MainWindow(QtWidgets.QMainWindow):
                         display_force = self.last_valid_forces[0]['max_force']
                         display_force1 = self.last_valid_forces[0]['force1']
                         display_force2 = self.last_valid_forces[0]['force2']
-                        display_accuracy = self.last_valid_forces[0]['accuracy']
+                        # Get raw accuracy and apply the curve for display
+                        raw_accuracy = self.last_valid_forces[0]['accuracy']
+                        display_accuracy = round(100 * (raw_accuracy / 100) ** 1.7) if raw_accuracy is not None else 0 # Apply curve here
                         
                         for widget in widgets_by_esp[0]:
                             sensor_idx = widget['sensor_idx']
@@ -801,14 +823,14 @@ class MainWindow(QtWidgets.QMainWindow):
         # Update ESP32 #2
         if self.bt2.is_connected and 1 in widgets_by_esp:
             try:
-                # Get both force readings from ESP32 #2
-                force1, force2 = self.bt2.get_both_force_readings()
+                # Get both force readings and time since last detection from ESP32 #2
+                force1, force2, time_since_last, time_since_hit = self.bt2.get_both_force_readings()
                 
                 # Check if readings are valid numbers
                 if isinstance(force1, (int, float)) and isinstance(force2, (int, float)):
                     # Apply calibration factor to force1 which reads consistently lower
                     # This ensures compatibility even if the ESP32 firmware hasn't been updated
-                    force1 *= 1.5
+                    force2 *= 1.35
                     
                     # Calculate current max force
                     max_force = max(force1, force2)
@@ -827,13 +849,19 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.last_valid_forces[1]['force2'] = force2
                         self.last_valid_forces[1]['max_force'] = max_force
                         self.last_valid_forces[1]['accuracy'] = accuracy
+                        # Store the time since last message for this hit
+                        self.last_valid_forces[1]['time_since_last'] = time_since_last
+                        # Store the time since hit detection for this hit
+                        self.last_valid_forces[1]['time_since_hit'] = time_since_hit
                     
                     # Always use last valid max force for display
                     if self.last_valid_forces[1]['max_force'] is not None:
                         display_force = self.last_valid_forces[1]['max_force']
                         display_force1 = self.last_valid_forces[1]['force1']
                         display_force2 = self.last_valid_forces[1]['force2']
-                        display_accuracy = self.last_valid_forces[1]['accuracy']
+                        # Get raw accuracy and apply the curve for display
+                        raw_accuracy = self.last_valid_forces[1]['accuracy']
+                        display_accuracy = round(100 * (raw_accuracy / 100) ** 1.7) if raw_accuracy is not None else 0 # Apply curve here
                     else:
                         display_force = 0
                         display_force1 = 0
@@ -861,7 +889,9 @@ class MainWindow(QtWidgets.QMainWindow):
                         display_force = self.last_valid_forces[1]['max_force']
                         display_force1 = self.last_valid_forces[1]['force1']
                         display_force2 = self.last_valid_forces[1]['force2']
-                        display_accuracy = self.last_valid_forces[1]['accuracy']
+                        # Get raw accuracy and apply the curve for display
+                        raw_accuracy = self.last_valid_forces[1]['accuracy']
+                        display_accuracy = round(100 * (raw_accuracy / 100) ** 1.7) if raw_accuracy is not None else 0 # Apply curve here
                         
                         for widget in widgets_by_esp[1]:
                             sensor_idx = widget['sensor_idx']
@@ -898,20 +928,48 @@ class MainWindow(QtWidgets.QMainWindow):
             lv = self.last_valid_forces[0]
             if lv['max_force'] is not None and lv['max_force'] >= self.reaction_threshold:
                 rt_ms = ((time.perf_counter() - self.reaction_start_time)*1000)
-                self.reaction_time_lbl.setText(f"Reaction Time: {rt_ms:.0f} ms")
+                # Get processing delay - the time between hit detection and data transmission
+                time_since_hit_ms = lv.get('time_since_hit', 0)
+                # Subtract the processing delay to get the true reaction time
+                true_rt_ms = rt_ms - time_since_hit_ms
+                
+                print(f"[DEBUG] Reaction time: {rt_ms:.0f}ms, Processing delay: {time_since_hit_ms}ms, True reaction time: {true_rt_ms:.0f}ms")
+                
+                # Show the corrected reaction time or "Invalid time" if it's too fast
+                if true_rt_ms < 50:
+                    self.reaction_time_lbl.setText("Reaction Time: Invalid time")
+                else:
+                    self.reaction_time_lbl.setText(f"Reaction Time: {true_rt_ms:.0f} ms")
                 self.reaction_active = False
 
         # Speed combo drill detection using last_valid_forces[0]
         if self.stack.currentWidget() == self.speed_screen and self.speed_active:
             lv = self.last_valid_forces[0]
             elapsed = time.perf_counter() - self.speed_start_time
+            
+            # Get the processing delay - time between hit detection and data transmission
+            time_since_hit_ms = lv.get('time_since_hit', 0) if lv.get('max_force') is not None else 0
+            
+            # Calculate the true elapsed time by subtracting the processing delay
+            true_elapsed = elapsed - (time_since_hit_ms / 1000.0)
+            
             if lv['max_force'] is not None and lv['max_force'] >= self.speed_threshold:
+                # For debug, show all timing information
+                print(f"[DEBUG] Speed drill hit detected - Raw elapsed: {elapsed:.3f}s, Processing delay: {time_since_hit_ms}ms, True elapsed: {true_elapsed:.3f}s")
+                
+                # Update UI with the combo count
                 self.speed_combo += 1
                 self.combo_lbl.setText(f"Combo: {self.speed_combo}")
+                
+                # Make it harder every 5 kicks
                 if self.speed_combo % 5 == 0:
                     self.speed_time_limit = max(0.1, self.speed_time_limit - 0.1)
+                    print(f"[DEBUG] Speed limit decreased to {self.speed_time_limit:.1f}s")
+                    
+                # Start the next kick
                 self._next_kick()
-            elif elapsed > self.speed_time_limit:
+            elif true_elapsed > self.speed_time_limit:
+                print(f"[DEBUG] Speed drill timeout - Raw elapsed: {elapsed:.3f}s, Processing delay: {time_since_hit_ms}ms, True elapsed: {true_elapsed:.3f}s, Limit: {self.speed_time_limit:.1f}s")
                 self.kick_lbl.setText("Drill ended!")
                 self.speed_active = False
             
@@ -926,14 +984,17 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.last_valid_forces[esp_idx]['max_force'] is not None and self.last_valid_forces[esp_idx]['max_force'] >= 220:
             # Get values from the best readings
             max_force = self.last_valid_forces[esp_idx]['max_force']
-            accuracy = self.last_valid_forces[esp_idx]['accuracy']
-            
+            raw_accuracy = self.last_valid_forces[esp_idx]['accuracy'] # Get raw accuracy
+
+            # Apply the curve
+            adjusted_accuracy = round(100 * (raw_accuracy / 100) ** 1.7)
+
             # Calculate force percentage (200N = 20%, 1000N = 100%, >1000N can exceed 100%)
             force_percent = min(120, max(0, (max_force / 1000) * 100))
-            
-            # Calculate grade as average of force percent and accuracy
-            grade_percent = (force_percent + accuracy) / 2
-            
+
+            # Calculate grade as average of force percent and ADJUSTED accuracy
+            grade_percent = (force_percent + adjusted_accuracy) / 2
+
             # Determine letter grade with new thresholds
             letter_grade = "F"
             if grade_percent >= 80:
@@ -949,7 +1010,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.grade_value.setText(letter_grade)
             self.force_label.setText(f"{max_force} N")
             self.force_percent.setText(f"{force_percent:.1f}%")
-            self.accuracy_label.setText(f"{accuracy}%")
+            self.accuracy_label.setText(f"{adjusted_accuracy}%")
             
             # Set grade color based on letter
             grade_colors = {
