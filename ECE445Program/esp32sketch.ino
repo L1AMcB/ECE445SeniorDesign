@@ -20,7 +20,17 @@ const float MAX_FORCE_NEWTONS = 1500.0;  // Maximum force in Newtons at 3V
 // Continuous reading control
 bool continuousReading = false;
 unsigned long lastReadingTime = 0;
-const unsigned long READING_INTERVAL = 100; // Send readings every 100ms (10 Hz)
+const unsigned long READING_INTERVAL = 10; // Read sensors every 10ms
+
+// Peak detection variables
+unsigned long lastSendTime = 0;
+const unsigned long SEND_INTERVAL = 500; // Regular heartbeat interval and hit detection window
+float peakForce1 = 0.0;
+float peakForce2 = 0.0;
+bool hasPeakAboveThreshold = false;
+const float FORCE_THRESHOLD = 220.0; // Hit threshold (220N)
+bool inHitDetectionWindow = false;
+unsigned long hitStartTime = 0;
 
 BLEServer *pServer = NULL;
 BLECharacteristic *pTxCharacteristic = NULL;
@@ -56,6 +66,12 @@ class MyCallbacks: public BLECharacteristicCallbacks {
         if (rxValue == "START_FORCE_READING\n" || rxValue == "START_FORCE_READING") {
           continuousReading = true;
           Serial.println("Starting continuous force readings");
+          // Reset peak detection
+          peakForce1 = 0.0;
+          peakForce2 = 0.0;
+          lastSendTime = millis();
+          hasPeakAboveThreshold = false;
+          inHitDetectionWindow = false;
         }
         // Process STOP_FORCE_READING command
         else if (rxValue == "STOP_FORCE_READING\n" || rxValue == "STOP_FORCE_READING") {
@@ -68,8 +84,8 @@ class MyCallbacks: public BLECharacteristicCallbacks {
 
 float calculateForce(int sensorValue) {
   // Map the raw sensor value to force in Newtons
-  // This is a simple linear mapping from 0-4095 (0-3.3V) to 0-1500N
-  float force = map(sensorValue, MIN_SENSOR_VAL, MAX_SENSOR_VAL, 0, MAX_FORCE_NEWTONS * 10) / 10.0;
+  // Direct linear mapping without integer division/multiplication to avoid precision loss
+  float force = (sensorValue - MIN_SENSOR_VAL) * MAX_FORCE_NEWTONS / (MAX_SENSOR_VAL - MIN_SENSOR_VAL);
   
   // Constrain force value
   if (force < 0) force = 0;
@@ -129,31 +145,112 @@ void loop() {
     oldDeviceConnected = deviceConnected;
   }
   
-  // If continuous reading is enabled and we're connected, send force readings at regular intervals
+  // If continuous reading is enabled and we're connected, monitor force readings
   if (deviceConnected && continuousReading) {
     unsigned long currentTime = millis();
+    
+    // Read sensors at READING_INTERVAL (every 10ms)
     if (currentTime - lastReadingTime >= READING_INTERVAL) {
       lastReadingTime = currentTime;
       
-      // Read force sensor values
-      float force1 = calculateForce(analogRead(forceSensorPin1));
-      float force2 = calculateForce(analogRead(forceSensorPin2));
+      // Read force sensor values with multiple samples to reduce noise
+      int raw1 = 0;
+      int raw2 = 0;
+      const int numSamples = 5;  // Take 5 samples and average them
       
-      // Format response string: "force1,force2"
-      char forceStr[20];
-      sprintf(forceStr, "%.1f,%.1f", force1, force2);
+      for (int i = 0; i < numSamples; i++) {
+        raw1 += analogRead(forceSensorPin1);
+        raw2 += analogRead(forceSensorPin2);
+        delayMicroseconds(500);  // Short delay between readings
+      }
       
-      // Send response
-      pTxCharacteristic->setValue(forceStr);
+      raw1 /= numSamples;
+      raw2 /= numSamples;
+      
+      // Calculate forces
+      float force1 = calculateForce(raw1);
+      float force2 = calculateForce(raw2);
+      
+      // Check if either force is above threshold
+      bool isAboveThreshold = (force1 >= FORCE_THRESHOLD || force2 >= FORCE_THRESHOLD);
+      
+      // Start or continue hit detection window if above threshold
+      if (isAboveThreshold) {
+        if (!inHitDetectionWindow) {
+          // Start a new hit detection window
+          inHitDetectionWindow = true;
+          hitStartTime = currentTime;
+          peakForce1 = force1;  // Initialize peak values with current values
+          peakForce2 = force2;
+          hasPeakAboveThreshold = true;
+        } else {
+          // Already in a hit window, update peaks if needed
+          if (force1 > peakForce1) {
+            peakForce1 = force1;
+          }
+          if (force2 > peakForce2) {
+            peakForce2 = force2;
+          }
+        }
+      }
+      
+      // Check if hit detection window has expired
+      if (inHitDetectionWindow && (currentTime - hitStartTime >= SEND_INTERVAL)) {
+        // Hit window completed, send peak values
+        char peakStr[20];
+        sprintf(peakStr, "%.1f,%.1f", peakForce1, peakForce2);
+        
+        // Send peak values
+        pTxCharacteristic->setValue(peakStr);
+        pTxCharacteristic->notify();
+        
+        Serial.print("Hit window completed, sent peak readings: ");
+        Serial.println(peakStr);
+        
+        // Reset for next hit
+        inHitDetectionWindow = false;
+        peakForce1 = 0.0;
+        peakForce2 = 0.0;
+        hasPeakAboveThreshold = false;
+        lastSendTime = currentTime;  // Update last send time to avoid immediate heartbeat
+      }
+      
+      // Debug print less frequently to avoid flooding Serial
+      if ((currentTime / 1000) % 1 == 0) {
+        Serial.print("Current reading: ");
+        char currentStr[20];
+        sprintf(currentStr, "%.1f,%.1f", force1, force2);
+        Serial.print(currentStr);
+        Serial.print(" (Raw values: ");
+        Serial.print(raw1);
+        Serial.print(",");
+        Serial.print(raw2);
+        Serial.println(")");
+        
+        if (inHitDetectionWindow) {
+          Serial.print("In hit window, current peaks: ");
+          Serial.print(peakForce1);
+          Serial.print(",");
+          Serial.println(peakForce2);
+        }
+      }
+    }
+    
+    // Send heartbeat readings every SEND_INTERVAL when no hit is in progress
+    if (!inHitDetectionWindow && (currentTime - lastSendTime >= SEND_INTERVAL)) {
+      // Send a zero reading as heartbeat
+      char heartbeatStr[20];
+      sprintf(heartbeatStr, "0.0,0.0");
+      
+      pTxCharacteristic->setValue(heartbeatStr);
       pTxCharacteristic->notify();
       
-      // Debug print every 10 readings (1 second) to avoid flooding Serial
-      if ((currentTime / 1000) % 1 == 0) {
-        Serial.print("Continuous reading: ");
-        Serial.println(forceStr);
-      }
+      Serial.println("Sent heartbeat");
+      
+      // Reset send time
+      lastSendTime = currentTime;
     }
   }
   
-  delay(10);
+  delay(1);  // Minimal delay for fastest response
 }
