@@ -862,6 +862,28 @@ class MainWindow(QtWidgets.QMainWindow):
         # Update Kicking School screen if visible
         if hasattr(self, 'kicking_school_screen') and self.stack.currentWidget() == self.kicking_school_screen:
             self._update_kicking_grade()
+
+                # Reaction drill detection
+        if self.stack.currentWidget() == self.reaction_screen and self.reaction_active:
+            if self.force_widgets:
+                val = self.force_widgets[0]['bar'].value()
+                if val >= self.reaction_threshold:
+                    rt_ms = (time.perf_counter() - self.reaction_start_time) * 1000
+                    self.reaction_time_lbl.setText(f"Reaction Time: {rt_ms:.0f} ms")
+                    self.reaction_active = False
+                    
+        # Speed combo drill detection
+        if self.stack.currentWidget() == self.speed_screen and self.speed_active:
+            if self.force_widgets:
+                val = self.force_widgets[0]['bar'].value()
+                elapsed = time.perf_counter() - self.speed_start_time
+                if val >= self.speed_threshold:
+                    self.speed_combo += 1
+                    self.combo_lbl.setText(f"Combo: {self.speed_combo}")
+                    self._next_kick()
+                elif elapsed > self.speed_time_limit:
+                    self.kick_lbl.setText("Drill ended!")
+                    self.speed_active = False
             
     def _update_kicking_grade(self):
         # Check if selected device is connected
@@ -914,27 +936,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def _show_games(self):       self.stack.setCurrentWidget(self.games_screen)
     def _show_settings(self):    self.stack.setCurrentWidget(self.settings_screen)
 
-        # Reaction drill detection
-        if self.stack.currentWidget() == self.reaction_screen and self.reaction_active:
-            if self.force_widgets:
-                val = self.force_widgets[0]['bar'].value()
-                if val >= self.reaction_threshold:
-                    rt_ms = (time.perf_counter() - self.reaction_start_time) * 1000
-                    self.reaction_time_lbl.setText(f"Reaction Time: {rt_ms:.0f} ms")
-                    self.reaction_active = False
-                    
-        # Speed combo drill detection
-        if self.stack.currentWidget() == self.speed_screen and self.speed_active:
-            if self.force_widgets:
-                val = self.force_widgets[0]['bar'].value()
-                elapsed = time.perf_counter() - self.speed_start_time
-                if val >= self.speed_threshold:
-                    self.speed_combo += 1
-                    self.combo_lbl.setText(f"Combo: {self.speed_combo}")
-                    self._next_kick()
-                elif elapsed > self.speed_time_limit:
-                    self.kick_lbl.setText("Drill ended!")
-                    self.speed_active = False
 
     # Connect/disconnect logic
     def _toggle_connection(self, handler, status_lbl, widgets, btn):
