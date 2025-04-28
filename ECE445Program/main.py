@@ -127,40 +127,62 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _create_main_menu(self):
         w = QtWidgets.QWidget()
-        # Background
-        bg_label = QtWidgets.QLabel(w)
+        w.setMinimumSize(100, 100) # Allow the widget to shrink more
+        # Create a main layout that will hold everything
+        main_layout = QtWidgets.QGridLayout(w) # Use GridLayout for overlaying
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        # Background Label setup
+        bg_label = QtWidgets.QLabel()
         bg_path = os.path.join("assets", "homescreen.png")
         if os.path.isfile(bg_path):
-            pix = QtGui.QPixmap(bg_path).scaled(self.size(),
-                                                QtCore.Qt.KeepAspectRatioByExpanding)
+            pix = QtGui.QPixmap(bg_path) # Load pixmap without initial scaling
             bg_label.setPixmap(pix)
-        bg_label.setGeometry(0, 0, self.width(), self.height())
-        # Transparent overlay for buttons
-        overlay = QtWidgets.QWidget(bg_label)
-        overlay.setStyleSheet("background: transparent;")
-        overlay.setGeometry(bg_label.geometry())
+            bg_label.setScaledContents(True) # Allow pixmap to scale with label size
+
+        # Add bg_label to cover the whole grid cell (0,0)
+        main_layout.addWidget(bg_label, 0, 0)
+
+        # Container for buttons and version label (will be placed on top of bg_label)
+        content_container = QtWidgets.QWidget()
+        content_container.setStyleSheet("background: transparent;") # Make it transparent
+        content_layout = QtWidgets.QVBoxLayout(content_container)
+        content_layout.setContentsMargins(120, 50, 120, 30) # Adjust margins as needed
+
         # Button styling
         btn_style = (
             "QPushButton { background-color: #1e3a5c; color: white;"
             " border-radius: 15px; padding: 12px 24px; font: bold 20px Impact; }"
             "QPushButton:hover { background-color: #155a75; }"
         )
-        # Place buttons
+
+        content_layout.addStretch(2) # Add stretch above buttons
+
+        # Place buttons using the content layout
         for idx, (text, method) in enumerate([
             ("Standard Force Measuring", self._show_force),
             ("Training Modes",             self._show_training),
             ("Mini Games",                self._show_games),
             ("Settings",                  self._show_settings),
         ]):
-            btn = QtWidgets.QPushButton(text, overlay)
+            btn = QtWidgets.QPushButton(text)
             btn.setStyleSheet(btn_style)
             btn.clicked.connect(method)
-            y = int(self.height() * (0.3 + 0.15 * idx))
-            btn.move(120, y)
+            content_layout.addWidget(btn, alignment=QtCore.Qt.AlignLeft)
+            if idx < 3: # Add spacing between buttons
+                content_layout.addSpacing(20)
+
+        content_layout.addStretch(3) # Add stretch below buttons
+
         # Version label
-        ver_lbl = QtWidgets.QLabel("CTC Force System v1.0", overlay)
-        ver_lbl.setStyleSheet("color: white;")
-        ver_lbl.move(self.width()//2 - 60, int(self.height()*0.95))
+        ver_lbl = QtWidgets.QLabel("CTC Force System v1.0")
+        ver_lbl.setStyleSheet("color: white; background: rgba(0,0,0,0.5); padding: 2px;") # Semi-transparent background for visibility
+        content_layout.addWidget(ver_lbl, alignment=QtCore.Qt.AlignCenter)
+
+        # Add the content container on top of the background label in the grid
+        main_layout.addWidget(content_container, 0, 0)
+
         return w
 
     def _create_force_screen(self):
@@ -517,8 +539,12 @@ class MainWindow(QtWidgets.QMainWindow):
     def _show_settings(self):    self.stack.setCurrentWidget(self.settings_screen)
 
     def _start_reaction(self):
+        # Reset reaction state to prevent immediate detection
+        self.reaction_active = False
+        
         # Clear previous result
         self.reaction_time_lbl.setText("Reaction Time: ---")
+        
         # Schedule beep after random delay
         delay_ms = int(random.uniform(1.0, 3.0) * 1000)
         QtCore.QTimer.singleShot(delay_ms, self._trigger_beep)
@@ -863,15 +889,35 @@ class MainWindow(QtWidgets.QMainWindow):
         if hasattr(self, 'kicking_school_screen') and self.stack.currentWidget() == self.kicking_school_screen:
             self._update_kicking_grade()
 
-                # Reaction drill detection
+        # Reaction drill detection
         if self.stack.currentWidget() == self.reaction_screen and self.reaction_active:
-            if self.force_widgets:
-                val = self.force_widgets[0]['bar'].value()
-                if val >= self.reaction_threshold:
-                    rt_ms = (time.perf_counter() - self.reaction_start_time) * 1000
-                    self.reaction_time_lbl.setText(f"Reaction Time: {rt_ms:.0f} ms")
-                    self.reaction_active = False
-                    
+            # Check both ESP devices for any force readings above threshold
+            for esp_idx in range(2):
+                if esp_idx == 0 and self.bt1.is_connected:
+                    force1, force2 = self.bt1.get_both_force_readings()
+                    if isinstance(force1, (int, float)) and force1 >= self.reaction_threshold:
+                        rt_ms = (time.perf_counter() - self.reaction_start_time) * 1000
+                        self.reaction_time_lbl.setText(f"Reaction Time: {rt_ms:.0f} ms")
+                        self.reaction_active = False
+                        break
+                    if isinstance(force2, (int, float)) and force2 >= self.reaction_threshold:
+                        rt_ms = (time.perf_counter() - self.reaction_start_time) * 1000
+                        self.reaction_time_lbl.setText(f"Reaction Time: {rt_ms:.0f} ms")
+                        self.reaction_active = False
+                        break
+                elif esp_idx == 1 and self.bt2.is_connected:
+                    force1, force2 = self.bt2.get_both_force_readings()
+                    if isinstance(force1, (int, float)) and force1 >= self.reaction_threshold:
+                        rt_ms = (time.perf_counter() - self.reaction_start_time) * 1000
+                        self.reaction_time_lbl.setText(f"Reaction Time: {rt_ms:.0f} ms")
+                        self.reaction_active = False
+                        break
+                    if isinstance(force2, (int, float)) and force2 >= self.reaction_threshold:
+                        rt_ms = (time.perf_counter() - self.reaction_start_time) * 1000
+                        self.reaction_time_lbl.setText(f"Reaction Time: {rt_ms:.0f} ms")
+                        self.reaction_active = False
+                        break
+
         # Speed combo drill detection
         if self.stack.currentWidget() == self.speed_screen and self.speed_active:
             if self.force_widgets:
