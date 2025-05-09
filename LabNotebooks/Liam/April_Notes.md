@@ -4,7 +4,7 @@ We have soldered almost all of the parts to our board, except for a few resistor
 
 We have gotten our paddle back from the machine shop and have our sensors ready to wire to our board. 
 
-![paddle](../../machined_paddle.png)
+![paddle](../../machined_paddle.jpeg)
 
 
 4/13:
