@@ -58,5 +58,5 @@ we should be able to pass all of our R/V requirements in the demo.
 
 We have demoed successfully, showing the consistency of the force readings, successful speed readings, and showing successful accuracy readings as well. 
 
-![complete_paddle](../../complete_paddle.png)
+![complete_paddle](../../complete_paddle.jpeg)
 
