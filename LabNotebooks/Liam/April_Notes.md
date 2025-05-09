@@ -4,13 +4,17 @@ We have soldered almost all of the parts to our board, except for a few resistor
 
 We have gotten our paddle back from the machine shop and have our sensors ready to wire to our board. 
 
+![paddle](../../machined_paddle.png)
+
 
 4/13:
 
 ![control_stuff](../../control_detailed.png)
 
 we have successfully programmed our board, and we are able to read from it as well. All of our tests up until this point have passed. 
+
 ![uart](../../uart_detailed.png)
+
 We are now waiting for our finals parts and will be able to test the full functionality of the baord. 
 
 
@@ -18,9 +22,17 @@ We are now waiting for our finals parts and will be able to test the full functi
 
 We have recieved most of our parts and soldered them to our board. We are able to successfully power with 9V from the bench supply and get the correct readings on our board. We are properly sending 3.3V to the esp32. 
 
+![power1](../../power_detailed1.png)
+
+![power2](../../power_detailed2.png)
+
+We had to swap for a 375k resistor instead of a 750k because we were reading 10V where we should be reading 5V at the output of the step-up
+
 We will be building a second board to demonstrate the functionality with two padles. 
 
 We have gotten our paddles back and will start threading the sensors through to connect them, after we test them on our board.
+
+![sensor](../../sensor_detailed.png)
 
 We successfully tested our sensors on our board, however the readings were very low. We are able to see changes when we tap the sensors, however we don't have a screwdriver small enough to actually change the potentiometers to increase the sensitivity. 
 
@@ -39,7 +51,12 @@ We tried replacing the pieces we think were affected however still no luck getti
 
 We have gotten our second board working and hooked up to the paddle successfully! 
 
+![rv1](../../rvtable1.png)
+![rv2](../../rvtable2.png)
+
+we should be able to pass all of our R/V requirements in the demo.
+
 We have demoed successfully, showing the consistency of the force readings, successful speed readings, and showing successful accuracy readings as well. 
 
-
+![complete_paddle](../../complete_paddle.png)
 
