@@ -7,8 +7,10 @@ We have gotten our paddle back from the machine shop and have our sensors ready 
 
 4/13:
 
-we have successfully programmed our board, and we are able to read from it as well. All of our tests up until this point have passed. 
+![control_stuff](../../control_detailed.png)
 
+we have successfully programmed our board, and we are able to read from it as well. All of our tests up until this point have passed. 
+![uart](../../uart_detailed.png)
 We are now waiting for our finals parts and will be able to test the full functionality of the baord. 
 
 
